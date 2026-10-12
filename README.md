@@ -12,8 +12,8 @@ Open `server/.env` and replace `MONGO_URI` with your MongoDB Atlas connection st
 
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/studysphere?retryWrites=true&w=majority
-JWT_SECRET=studysphere_super_secret_jwt_key_2026_production
+MONGO_URI=YOUR_MONGODB_URI_HERE
+JWT_SECRET=YOUR_JWT_SECRET_KEY_HERE
 CLIENT_URL=http://localhost:5173
 ```
 

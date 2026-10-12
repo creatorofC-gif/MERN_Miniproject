@@ -6,9 +6,9 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
 export const Register: React.FC = () => {
-  const [name, setName] = useState('Alex Mercer');
-  const [email, setEmail] = useState('alex@studysphere.io');
-  const [password, setPassword] = useState('password123');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [error, setError] = useState('');

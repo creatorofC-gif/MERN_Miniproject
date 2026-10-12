@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'studysphere_super_secret_jwt_key_2026_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_insecure_jwt_secret_for_local_testing_only';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {

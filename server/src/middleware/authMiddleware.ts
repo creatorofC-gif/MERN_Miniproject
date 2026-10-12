@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'studysphere_super_secret_jwt_key_2026_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_insecure_jwt_secret_for_local_testing_only';
 
 export interface AuthRequest extends Request {
   user?: {

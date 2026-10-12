@@ -6,8 +6,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('alex@studysphere.io');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');

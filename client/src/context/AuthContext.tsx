@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('studysphere_token') || 'demo_token';
+    return localStorage.getItem('studysphere_token');
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);

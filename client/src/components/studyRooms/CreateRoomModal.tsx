@@ -24,12 +24,14 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const [vibe, setVibe] = useState('Lofi Beats');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) return;
 
     setLoading(true);
+    setError(null);
     try {
       const room = await roomsService.createRoom({
         name,
@@ -38,13 +40,16 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
         description,
         category: 'STEM HUB',
       });
-      onClose();
+      const roomId = room._id || room.id;
+      if (onCreated) onCreated(room);
       if (onSuccess) onSuccess();
-      navigate(`/study-room/${room._id}`);
-    } catch (err) {
-      console.error(err);
       onClose();
-      navigate(`/study-room/new-${Date.now()}`);
+      if (roomId) {
+        navigate(`/study-rooms/${roomId}`);
+      }
+    } catch (err: any) {
+      console.error('Failed to create room:', err);
+      setError(err?.message || 'Failed to create room. Please verify you are logged in and try again.');
     } finally {
       setLoading(false);
     }
@@ -58,6 +63,11 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       subtitle="Launch an immersive, focused study space for your peers."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
+            {error}
+          </div>
+        )}
         <Input
           label="Room Name"
           placeholder="e.g., Organic Chemistry Midterm Sprint"

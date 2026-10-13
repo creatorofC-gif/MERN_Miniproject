@@ -32,6 +32,7 @@ export interface IDoubt extends Document {
   };
   answers: IAnswer[];
   upvotes: number;
+  upvotedBy?: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +56,7 @@ const DoubtSchema = new Schema<IDoubt>(
       userId: { type: Schema.Types.ObjectId, ref: 'User' },
       name: { type: String },
     },
+    upvotedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     answers: [
       {
         authorName: { type: String, required: true },

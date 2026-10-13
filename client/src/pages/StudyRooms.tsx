@@ -163,7 +163,7 @@ export const StudyRooms: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredRooms.map((room) => (
             <StudyRoomCard
-              key={room.id}
+              key={room._id || room.id}
               room={room}
               onJoin={(id) => navigate(`/study-rooms/${id}`)}
             />
@@ -177,7 +177,6 @@ export const StudyRooms: React.FC = () => {
         onClose={() => setCreateModalOpen(false)}
         onCreated={(newRoom) => {
           setRooms((prev) => [newRoom, ...prev]);
-          navigate(`/study-rooms/${newRoom.id}`);
         }}
       />
     </div>

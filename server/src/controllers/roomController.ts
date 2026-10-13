@@ -1,34 +1,12 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { StudyRoom } from '../models/StudyRoom.js';
+import { User } from '../models/User.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
-const MOCK_STUDY_PEERS = [
-  {
-    name: 'Sarah Jenkins',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-    status: 'focus',
-    joinedAt: new Date(),
-  },
-  {
-    name: 'Mike Torres',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    status: 'break',
-    joinedAt: new Date(),
-  },
-  {
-    name: 'Elena Rostova',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-    status: 'focus',
-    joinedAt: new Date(),
-  },
-  {
-    name: 'Marcus Chen',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    status: 'active',
-    joinedAt: new Date(),
-  },
-];
+const escapeRegex = (str: string): string => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 export const getRooms = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -44,9 +22,10 @@ export const getRooms = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (search) {
+      const sanitized = escapeRegex(String(search));
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
+        { name: { $regex: sanitized, $options: 'i' } },
+        { description: { $regex: sanitized, $options: 'i' } },
       ];
     }
 
@@ -66,72 +45,14 @@ export const getRoomById = async (req: Request, res: Response): Promise<void> =>
     if (mongoose.Types.ObjectId.isValid(id)) {
       room = await StudyRoom.findById(id);
     } else {
+      const escapedId = escapeRegex(id.replace(/-/g, ' '));
       room = await StudyRoom.findOne({
-        $or: [
-          { _id: id },
-          { name: { $regex: id.replace(/-/g, ' '), $options: 'i' } },
-        ],
+        name: { $regex: escapedId, $options: 'i' },
       });
     }
 
     if (!room) {
-      // Dynamic fallback for any fresh or custom room slug
-      const formattedTitle = id.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-      const fallbackRoom = {
-        _id: id,
-        id,
-        name: formattedTitle || 'Study Session',
-        subject: 'Mathematics',
-        description: 'Collaborative deep work session with synchronized focus timer and peer study buddies.',
-        status: 'live',
-        vibe: 'Lofi Beats',
-        category: 'FOCUS HUB',
-        participantCount: 5,
-        participants: [
-          ...MOCK_STUDY_PEERS,
-          {
-            name: 'Alex Mercer',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            status: 'focus',
-            joinedAt: new Date(),
-          },
-        ],
-        messages: [
-          {
-            _id: 'sys-welcome',
-            senderName: 'System',
-            senderAvatar: '',
-            text: `Welcome to ${formattedTitle}! Pomodoro timer is synchronized.`,
-            type: 'system',
-            createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-          },
-          {
-            _id: 'msg-peer-1',
-            senderName: 'Sarah Jenkins',
-            senderAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-            text: 'Hey everyone! Starting my 50min deep work sprint here 📚',
-            type: 'message',
-            createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-          },
-          {
-            _id: 'msg-peer-2',
-            senderName: 'Mike Torres',
-            senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-            text: 'Grabbing a quick coffee then back to problem set 3 ☕',
-            type: 'message',
-            createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          },
-          {
-            _id: 'msg-peer-3',
-            senderName: 'Elena Rostova',
-            senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-            text: 'Let me know if anyone wants to compare integration derivations!',
-            type: 'message',
-            createdAt: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
-          },
-        ],
-      };
-      res.json(fallbackRoom);
+      res.status(404).json({ message: 'Study room not found' });
       return;
     }
 
@@ -144,13 +65,30 @@ export const getRoomById = async (req: Request, res: Response): Promise<void> =>
 export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { name, subject, description, vibe, category } = req.body;
-    if (!name || !subject || !description) {
-      res.status(400).json({ message: 'Name, subject, and description are required' });
+    if (
+      !name ||
+      typeof name !== 'string' ||
+      !subject ||
+      typeof subject !== 'string' ||
+      !description ||
+      typeof description !== 'string'
+    ) {
+      res.status(400).json({ message: 'Name, subject, and description are required string fields' });
       return;
     }
 
-    const creatorName = 'Alex Mercer';
-    const creatorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let creatorName = 'Student';
+    let creatorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let creatorId = undefined;
+
+    if (req.user?.id) {
+      creatorId = req.user.id;
+      const user = await User.findById(req.user.id);
+      if (user) {
+        creatorName = user.name;
+        creatorAvatar = user.avatar;
+      }
+    }
 
     const newRoom = await StudyRoom.create({
       name,
@@ -158,11 +96,11 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       description,
       vibe: vibe || 'Lofi Beats',
       category: category || 'STEM HUB',
-      owner: req.user?.id,
-      participantCount: 5,
+      owner: creatorId,
+      participantCount: 1,
       participants: [
-        ...MOCK_STUDY_PEERS,
         {
+          user: creatorId as any,
           name: creatorName,
           avatar: creatorAvatar,
           status: 'focus',
@@ -171,24 +109,10 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       ],
       messages: [
         {
-          senderName: 'StudySphere Bot',
+          senderName: 'System',
           senderAvatar: '',
           text: `Welcome to ${name}! Stay focused and productive.`,
           type: 'system',
-          createdAt: new Date(),
-        },
-        {
-          senderName: 'Sarah Jenkins',
-          senderAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-          text: `Joined ${name}! Ready for a 45m sprint.`,
-          type: 'message',
-          createdAt: new Date(),
-        },
-        {
-          senderName: 'Elena Rostova',
-          senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-          text: 'Good luck! Focusing on notes.',
-          type: 'message',
           createdAt: new Date(),
         },
       ],
@@ -204,6 +128,11 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
   try {
     const rawId = req.params.id;
     const id = Array.isArray(rawId) ? rawId[0] : (rawId || '');
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid study room ID format' });
+      return;
+    }
+
     const { name, avatar } = req.body;
 
     const room = await StudyRoom.findById(id);
@@ -212,14 +141,28 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
       return;
     }
 
-    const memberName = name || 'Student';
-    const memberAvatar =
-      avatar ||
+    let memberName = typeof name === 'string' && name.trim() ? name.trim().slice(0, 50) : 'Student';
+    let memberAvatar =
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    if (typeof avatar === 'string' && (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image/'))) {
+      memberAvatar = avatar;
+    }
+    const userId = req.user?.id;
 
-    const existingMember = room.participants.find((p) => p.name === memberName);
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        memberName = user.name;
+        memberAvatar = user.avatar;
+      }
+    }
+
+    const existingMember = room.participants.find(
+      (p) => (userId && p.user?.toString() === userId) || p.name === memberName
+    );
     if (!existingMember) {
       room.participants.push({
+        user: userId as any,
         name: memberName,
         avatar: memberAvatar,
         status: 'focus',

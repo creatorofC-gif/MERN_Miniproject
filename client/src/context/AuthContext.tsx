@@ -14,27 +14,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Default Alex Mercer user matching Figma screenshots
-const DEFAULT_USER: User = {
-  id: 'usr_1',
-  _id: 'usr_1',
-  name: 'Alex Mercer',
-  email: 'alex@studysphere.io',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  tier: 'Master Tier',
-  points: 1250,
-  streak: 14,
-  year: '3rd Year',
-  branch: 'Computer Science & Math',
-  college: 'Stanford University',
-  bio: 'Focused on algorithms, distributed systems, and calculus.',
-  role: 'student',
-  dailyGoals: [
-    { title: 'Study 2 hours', completed: true },
-    { title: 'Solve 1 Doubt', completed: false },
-    { title: 'Attend 1 Study Room', completed: false },
-  ],
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -43,10 +22,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return DEFAULT_USER;
+        return null;
       }
     }
-    return DEFAULT_USER;
+    return null;
   });
 
   const [token, setToken] = useState<string | null>(() => {
@@ -71,16 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(res.user);
       localStorage.setItem('studysphere_token', res.token);
       localStorage.setItem('studysphere_user', JSON.stringify(res.user));
-    } catch (err) {
-      const demoUser: User = {
-        ...DEFAULT_USER,
-        name: email.split('@')[0] || 'Alex Mercer',
-        email,
-      };
-      setToken('demo_token_signed');
-      setUser(demoUser);
-      localStorage.setItem('studysphere_token', 'demo_token_signed');
-      localStorage.setItem('studysphere_user', JSON.stringify(demoUser));
     } finally {
       setIsLoading(false);
     }
@@ -94,16 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(res.user);
       localStorage.setItem('studysphere_token', res.token);
       localStorage.setItem('studysphere_user', JSON.stringify(res.user));
-    } catch (err) {
-      const newUser: User = {
-        ...DEFAULT_USER,
-        name,
-        email,
-      };
-      setToken('demo_token_signed');
-      setUser(newUser);
-      localStorage.setItem('studysphere_token', 'demo_token_signed');
-      localStorage.setItem('studysphere_user', JSON.stringify(newUser));
     } finally {
       setIsLoading(false);
     }

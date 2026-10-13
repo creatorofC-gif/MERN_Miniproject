@@ -29,15 +29,14 @@ export const Register: React.FC = () => {
       await register(name, email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Registration failed');
+      setError(err?.message || err?.response?.data?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleOAuthDemo = (provider: string) => {
-    register(`New ${provider} User`, `user@${provider.toLowerCase()}.com`, 'demo123');
-    navigate('/dashboard');
+    setError(`${provider} sign-up is not configured yet. Please register with your email and password.`);
   };
 
   return (

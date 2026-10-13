@@ -13,31 +13,6 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   currentUserId,
   onInviteBuddy,
 }) => {
-  const defaultBuddies: Participant[] = [
-    {
-      name: 'Sarah J.',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-      status: 'focus',
-    },
-    {
-      name: 'Mike T.',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-      status: 'break',
-    },
-    {
-      name: 'Alex R.',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-      status: 'active',
-    },
-    {
-      name: 'Elena G.',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-      status: 'active',
-    },
-  ];
-
-  const displayList = participants.length > 0 ? participants : defaultBuddies;
-
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-bold text-gray-200">
@@ -45,8 +20,23 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
         <span>Active Study Buddies</span>
       </div>
 
-      <div className="flex items-center gap-3.5 overflow-x-auto pb-2">
-        {displayList.map((buddy, idx) => {
+      {participants.length === 0 ? (
+        <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[#1E293B]/60 border border-[#374151]/50 text-gray-400 text-xs">
+          <span>No other study buddies in this room yet. Share the invite link to study together!</span>
+          <button
+            onClick={onInviteBuddy || (() => {
+              navigator.clipboard?.writeText(window.location.href);
+              alert('Room link copied to clipboard!');
+            })}
+            className="px-3 py-1.5 rounded-lg border border-dashed border-[#4B5563] hover:border-gray-300 text-gray-300 hover:text-white flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ml-3"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Invite Peers</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3.5 overflow-x-auto pb-2">
+          {participants.map((buddy, idx) => {
           const isBreak = buddy.status === 'break';
           const isFocus = buddy.status === 'focus';
 
@@ -79,6 +69,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1.5 px-2">
                 <span className="text-xs font-semibold text-white truncate block">
                   {buddy.name}
+                  {currentUserId && buddy.id === currentUserId ? ' (You)' : ''}
                 </span>
               </div>
             </div>
@@ -87,13 +78,17 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
 
         {/* Invite Buddy Card */}
         <button
-          onClick={onInviteBuddy || (() => alert('Invite link copied to clipboard: https://studysphere.io/join/calc2'))}
+          onClick={onInviteBuddy || (() => {
+            navigator.clipboard?.writeText(window.location.href);
+            alert('Room link copied to clipboard!');
+          })}
           className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-[#374151] hover:border-gray-400 bg-transparent flex flex-col items-center justify-center text-gray-400 hover:text-white transition-all shrink-0 cursor-pointer"
         >
           <UserPlus className="w-5 h-5 mb-1" />
           <span className="text-[11px] font-medium">+ Invite</span>
         </button>
       </div>
+      )}
     </div>
   );
 };

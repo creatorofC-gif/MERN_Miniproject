@@ -3,15 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import {
   ArrowLeft,
-  Users,
-  Volume2,
-  VolumeX,
   Share2,
   AlertCircle,
-  Sparkles,
-  BookOpen,
   LogOut,
-  Radio,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StudyRoom as StudyRoomType, ChatMessage, Participant } from '../types';
@@ -22,97 +16,70 @@ import { RoomChat } from '../components/studyRooms/RoomChat';
 import { ParticipantList } from '../components/studyRooms/ParticipantList';
 import { Button } from '../components/ui/Button';
 
-const INITIAL_MOCK_BUDDIES: Participant[] = [
-  {
-    name: 'Sarah Jenkins',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-    status: 'focus',
-    studyHours: 3.2,
-  },
-  {
-    name: 'Mike Torres',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    status: 'break',
-    studyHours: 2.1,
-  },
-  {
-    name: 'Elena Rostova',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-    status: 'focus',
-    studyHours: 4.5,
-  },
-  {
-    name: 'Marcus Chen',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    status: 'active',
-    studyHours: 1.8,
-  },
-];
-
-const INITIAL_MOCK_MESSAGES: ChatMessage[] = [
-  {
-    _id: 'msg-init-1',
-    senderName: 'Sarah Jenkins',
-    senderAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-    text: 'Hey everyone! Starting my 50min deep work sprint here 📚',
-    type: 'message',
-    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: 'msg-init-2',
-    senderName: 'Mike Torres',
-    senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    text: 'Grabbing a quick coffee then back to problem set 3 ☕',
-    type: 'message',
-    createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: 'msg-init-3',
-    senderName: 'Elena Rostova',
-    senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-    text: 'Let me know if anyone wants to compare integration derivations!',
-    type: 'message',
-    createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-  },
-];
-
 export const StudyRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [room, setRoom] = useState<StudyRoomType | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MOCK_MESSAGES);
-  const [participants, setParticipants] = useState<Participant[]>(INITIAL_MOCK_BUDDIES);
-  const [liveCount, setLiveCount] = useState<number>(5);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [liveCount, setLiveCount] = useState<number>(0);
   const [alertBanner, setAlertBanner] = useState<{ sender: string; title: string } | null>(null);
+  const [externalSync, setExternalSync] = useState<{
+    action: string;
+    timeRemaining: number;
+    isRunning: boolean;
+    mode?: string;
+  } | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
 
-  // Fetch initial room data
+  // Fetch initial room data from API
   useEffect(() => {
     if (!id) return;
+    setIsLoading(true);
+    setError(null);
 
-    roomService.getRoomById(id).then((data) => {
-      if (data) {
-        setRoom(data);
-        if (data.messages && data.messages.length > 0) {
-          setMessages(data.messages);
+    roomService
+      .getRoomById(id)
+      .then((data) => {
+        if (data) {
+          setRoom(data);
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages);
+          }
+          if (data.participants && data.participants.length > 0) {
+            setParticipants(data.participants);
+            setLiveCount(data.participants.length);
+          }
+        } else {
+          setError('Study room could not be found.');
         }
-        if (data.participants && data.participants.length > 0) {
-          setParticipants(data.participants);
-          setLiveCount(data.participants.length);
-        }
-      }
-    });
+      })
+      .catch((err) => {
+        console.error('Failed to load room:', err);
+        setError(err?.message || 'Study room not found or database unavailable.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [id]);
 
   // Connect WebSockets for Real-Time synchronization
   useEffect(() => {
-    if (!id) return;
+    if (!id || !room) return;
+
+    const socketUrl =
+      import.meta.env.VITE_SOCKET_URL ||
+      (window.location.port === '5173' ? 'http://localhost:5000' : '/');
+    const authToken = localStorage.getItem('studysphere_token');
 
     // Connect to backend Socket.IO
-    const socket = io('http://localhost:5000', {
+    const socket = io(socketUrl, {
+      auth: authToken ? { token: authToken } : undefined,
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
     });
@@ -122,8 +89,10 @@ export const StudyRoom: React.FC = () => {
       console.log(`[Socket] Connected to server: ${socket.id}`);
       socket.emit('join_room', {
         roomId: id,
-        userName: user?.name || 'Alex Mercer',
-        userAvatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        userName: user?.name || 'Student',
+        userAvatar:
+          user?.avatar ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       });
     });
 
@@ -135,19 +104,26 @@ export const StudyRoom: React.FC = () => {
     // Listen to room presence updates (user joins/leaves)
     socket.on('room_presence_update', ({ count, members }: { count: number; members: any[] }) => {
       if (count !== undefined) {
-        setLiveCount(Math.max(count, 4));
+        setLiveCount(count);
       }
-      if (members && members.length > 0) {
+      if (members) {
         const mappedParticipants: Participant[] = members.map((m: any, idx: number) => ({
           id: m.socketId || `p-${idx}`,
-          name: m.userName,
-          avatar: m.userAvatar,
+          name: m.userName || 'Student',
+          avatar:
+            m.userAvatar ||
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
           isMuted: true,
           status: m.status || 'focus',
-          studyHours: 2.5,
+          studyHours: 0,
         }));
         setParticipants(mappedParticipants);
       }
+    });
+
+    // Listen to synchronized Pomodoro timer events from peers
+    socket.on('timer_sync', (syncData: { action: string; timeRemaining: number; isRunning: boolean; mode?: string }) => {
+      setExternalSync(syncData);
     });
 
     // Listen to live doubt raised popup alert
@@ -159,9 +135,14 @@ export const StudyRoom: React.FC = () => {
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('new_message');
+      socket.off('room_presence_update');
+      socket.off('timer_sync');
+      socket.off('doubt_alert_popup');
       socket.disconnect();
     };
-  }, [id, user]);
+  }, [id, room, user]);
 
   // Send Chat Message via Socket
   const handleSendMessage = (text: string, type: 'message' | 'doubt_alert' = 'message') => {
@@ -169,8 +150,10 @@ export const StudyRoom: React.FC = () => {
 
     const payload = {
       roomId: id,
-      senderName: user?.name || 'Alex Mercer',
-      senderAvatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      senderName: user?.name || 'Student',
+      senderAvatar:
+        user?.avatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       text,
       type,
     };
@@ -184,7 +167,7 @@ export const StudyRoom: React.FC = () => {
 
     socketRef.current.emit('raise_doubt_alert', {
       roomId: id,
-      senderName: user?.name || 'Alex Mercer',
+      senderName: user?.name || 'Student',
       title: doubtTitle,
     });
   };
@@ -202,8 +185,36 @@ export const StudyRoom: React.FC = () => {
     });
   };
 
-  const roomName = room?.name || id?.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Calculus II Deep Work';
-  const roomSubject = room?.subject || 'Mathematics';
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
+        <div className="w-10 h-10 border-4 border-[#0057BE] border-t-transparent rounded-full animate-spin mb-4" />
+        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Loading Study Room...</h2>
+        <p className="text-sm text-gray-500 mt-1">Connecting to workspace and peers</p>
+      </div>
+    );
+  }
+
+  if (error || !room) {
+    return (
+      <div className="max-w-md mx-auto my-16 bg-white dark:bg-[#151C2F] rounded-2xl p-8 border border-gray-200 dark:border-[#1E293B] text-center shadow-lg">
+        <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Room Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 text-xs mb-6">
+          {error || 'The study room you are trying to access does not exist or could not be loaded.'}
+        </p>
+        <Button onClick={() => navigate('/study-rooms')} variant="primary" className="mx-auto">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Study Rooms
+        </Button>
+      </div>
+    );
+  }
+
+  const roomName = room.name;
+  const roomSubject = room.subject;
 
   return (
     <div className="space-y-6 font-sans max-w-7xl mx-auto pb-12">
@@ -225,7 +236,7 @@ export const StudyRoom: React.FC = () => {
               </span>
               <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span>LIVE • {liveCount} Active Scholars</span>
+                <span>LIVE • {liveCount} Active Scholar{liveCount === 1 ? '' : 's'}</span>
               </div>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
@@ -284,11 +295,11 @@ export const StudyRoom: React.FC = () => {
         </div>
       )}
 
-      {/* Prominent Active Study Buddies Bar (greets the user when opening room) */}
+      {/* Prominent Active Study Buddies Bar */}
       <div className="bg-[#151C2F] text-white p-5 rounded-2xl border border-[#1E293B] shadow-sm">
         <ParticipantList
           participants={participants}
-          currentUserId={user?.id || 'usr_1'}
+          currentUserId={user?.id}
         />
       </div>
 
@@ -301,6 +312,7 @@ export const StudyRoom: React.FC = () => {
             onTimerAction={(action, time, running, mode) => {
               handleTimerAction(action, time, running, mode);
             }}
+            externalSync={externalSync}
           />
 
           {/* Background Focus Ambiance Player */}

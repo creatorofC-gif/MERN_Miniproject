@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_insecure_jwt_secret_for_local_testing_only';
+import { JWT_SECRET } from '../config/jwt.js';
 
 export interface AuthRequest extends Request {
   user?: {

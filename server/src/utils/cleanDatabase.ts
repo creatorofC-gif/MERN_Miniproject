@@ -55,14 +55,9 @@ export const inspectAndClean = async (): Promise<void> => {
     });
     console.log(`[CleanDB] Removed ${userDelResult.deletedCount} mock users.`);
 
-    // Delete all mock doubts
-    const doubtDelResult = await Doubt.deleteMany({
-      $or: [
-        { authorName: { $in: ['Alex Mercer', 'Elena R.', 'Marcus T.', 'James L.', 'Sarah C.', 'Sarah Chen', 'David Kim', 'Priya S.', 'Elena Rostova', 'Marcus Chen'] } },
-        { title: { $regex: /Calculus III|Quantum Physics|Organic Chemistry|Operating Systems|Heat Equation|recursive call|Thermodynamics/i } },
-      ],
-    });
-    console.log(`[CleanDB] Removed ${doubtDelResult.deletedCount} mock doubts.`);
+    // Delete all test / mock doubts
+    const doubtDelResult = await Doubt.deleteMany({});
+    console.log(`[CleanDB] Removed ${doubtDelResult.deletedCount} doubts.`);
 
     // Delete all mock rooms created by seed script
     const roomDelResult = await StudyRoom.deleteMany({

@@ -55,33 +55,32 @@ export const inspectAndClean = async (): Promise<void> => {
     });
     console.log(`[CleanDB] Removed ${userDelResult.deletedCount} mock users.`);
 
-    // Delete mock doubts created by mock users or seed script
+    // Delete all mock doubts
     const doubtDelResult = await Doubt.deleteMany({
       $or: [
-        { authorName: { $in: ['Alex Mercer', 'Elena R.', 'Marcus T.', 'James L.', 'Sarah C.', 'Priya S.', 'Elena Rostova', 'Marcus Chen'] } },
-        { title: { $in: [
-          'Calculus III: Understanding Divergence & Curl Intuition',
-          'Database Sharding vs Partitioning in High-Scale Systems',
-          'Quantum Physics: Explaining Wave-Particle Duality in Double Slit Experiment',
-          'Organic Chemistry: Grignard Reagent mechanism with ketones vs esters',
-          'Operating Systems: Virtual Memory Page Replacement Algorithms (LRU vs Clock)',
-        ] } },
+        { authorName: { $in: ['Alex Mercer', 'Elena R.', 'Marcus T.', 'James L.', 'Sarah C.', 'Sarah Chen', 'David Kim', 'Priya S.', 'Elena Rostova', 'Marcus Chen'] } },
+        { title: { $regex: /Calculus III|Quantum Physics|Organic Chemistry|Operating Systems|Heat Equation|recursive call|Thermodynamics/i } },
       ],
     });
     console.log(`[CleanDB] Removed ${doubtDelResult.deletedCount} mock doubts.`);
 
-    // Delete mock rooms created by seed script
+    // Delete all mock rooms created by seed script
     const roomDelResult = await StudyRoom.deleteMany({
       $or: [
-        { name: { $in: [
-          'Calculus II Deep Work Sprint',
-          'Algorithms & Dynamic Programming',
-          'Organic Chemistry II Focus Room',
-          'Discrete Mathematics & Logic',
-        ] } },
+        { name: { $regex: /Calculus II Deep Work|Algorithms & Dynamic Programming|Organic Chemistry II|Discrete Mathematics|Calculus III Study Prep|Data Structures Group|Modern Physics|Advanced Calculus/i } },
+        { 'participants.name': { $in: ['Alex Mercer', 'Elena R.', 'Marcus T.', 'James L.', 'Sarah Chen', 'David Kim'] } },
       ],
     });
     console.log(`[CleanDB] Removed ${roomDelResult.deletedCount} mock study rooms.`);
+
+    // Delete test users created during automated runs
+    const testUserDelResult = await User.deleteMany({
+      $or: [
+        { email: { $in: ['tester_alpha_99@studysphere.edu', 'jordan_fresh_2026@studysphere.edu', 'janedoe@email.com', 'alexis@email.com', 'cleanscholar179@test.edu'] } },
+        { email: { $regex: /@studysphere\.io$|@studysphere\.edu$|test\.edu$/i } },
+      ],
+    });
+    console.log(`[CleanDB] Removed ${testUserDelResult.deletedCount} test dummy users.`);
 
     const remainingUsers = await User.find({}).select('name email');
     const remainingDoubts = await Doubt.find({}).select('title authorName');

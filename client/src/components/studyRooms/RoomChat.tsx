@@ -299,10 +299,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
             return (
               <div key={idx} className="flex items-start gap-2.5">
                 <Avatar
-                  src={
-                    msg.senderAvatar ||
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                  }
+                  src={msg.senderAvatar || ''}
                   name={msg.senderName}
                   size="sm"
                 />

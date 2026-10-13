@@ -23,10 +23,33 @@ export const Topbar: React.FC<TopbarProps> = ({ onMobileMenuToggle, onSearch }) 
     }
   };
 
-  const dummyNotifications = [
-    { id: '1', text: 'Elena answered your Calculus doubt (+50 pts)', time: '5m ago', read: false },
-    { id: '2', text: 'Daily streak updated: 14 Days!', time: '1h ago', read: false },
-    { id: '3', text: 'Sarah started "Organic Chemistry II"', time: '2h ago', read: true },
+  const notifications = [
+    {
+      id: 'welcome',
+      text: `Welcome to StudySphere, ${user?.name || 'Scholar'}! Jump into a room or ask a doubt to get started.`,
+      time: 'Just now',
+      read: false,
+    },
+    ...(user?.streak && user.streak > 0
+      ? [
+          {
+            id: 'streak',
+            text: `🔥 Active streak: ${user.streak} day${user.streak === 1 ? '' : 's'}! Keep the momentum going today.`,
+            time: 'Today',
+            read: false,
+          },
+        ]
+      : []),
+    ...(user?.points && user.points > 0
+      ? [
+          {
+            id: 'points',
+            text: `⭐ You have accumulated ${user.points.toLocaleString()} mastery points!`,
+            time: 'Today',
+            read: true,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -98,7 +121,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onMobileMenuToggle, onSearch }) 
                 <span className="text-[11px] text-[#0057BE] font-medium cursor-pointer">Mark all as read</span>
               </div>
               <div className="flex flex-col gap-2 mt-2">
-                {dummyNotifications.map((n) => (
+                {notifications.map((n) => (
                   <div key={n.id} className="p-2 rounded-lg hover:bg-gray-50 text-xs flex flex-col gap-0.5">
                     <p className="text-[#151C2F] font-medium">{n.text}</p>
                     <span className="text-[10px] text-[#98A2B3]">{n.time}</span>
@@ -111,10 +134,11 @@ export const Topbar: React.FC<TopbarProps> = ({ onMobileMenuToggle, onSearch }) 
 
         {/* Fire Streak */}
         <div
-          title={`${user?.streak || 14} Day Streak!`}
-          className="flex items-center gap-1 text-[#10B981] hover:text-[#059669] cursor-pointer p-1.5 rounded-full hover:bg-white transition-colors"
+          title={`${user?.streak ?? 0} Day Streak!`}
+          className="flex items-center gap-1.5 text-[#10B981] hover:text-[#059669] cursor-pointer p-1.5 px-2 rounded-full hover:bg-white transition-colors"
         >
           <Flame className="w-5 h-5 fill-current" />
+          <span className="text-xs font-bold text-[#10B981]">{user?.streak ?? 0}</span>
         </div>
 
         {/* Notifications Button */}

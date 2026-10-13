@@ -156,10 +156,7 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <Avatar
-            src={
-              doubt.authorAvatar ||
-              'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80'
-            }
+            src={doubt.authorAvatar || ''}
             name={doubt.authorName}
             size="md"
           />

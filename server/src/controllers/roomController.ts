@@ -78,7 +78,7 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     let creatorName = 'Student';
-    let creatorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let creatorAvatar = '';
     let creatorId = undefined;
 
     if (req.user?.id) {
@@ -86,7 +86,7 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       const user = await User.findById(req.user.id);
       if (user) {
         creatorName = user.name;
-        creatorAvatar = user.avatar;
+        creatorAvatar = user.avatar || '';
       }
     }
 
@@ -142,8 +142,7 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
     }
 
     let memberName = typeof name === 'string' && name.trim() ? name.trim().slice(0, 50) : 'Student';
-    let memberAvatar =
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let memberAvatar = '';
     if (typeof avatar === 'string' && (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image/'))) {
       memberAvatar = avatar;
     }
@@ -153,7 +152,7 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
       const user = await User.findById(userId);
       if (user) {
         memberName = user.name;
-        memberAvatar = user.avatar;
+        memberAvatar = user.avatar || memberAvatar;
       }
     }
 

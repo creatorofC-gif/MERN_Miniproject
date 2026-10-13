@@ -41,8 +41,8 @@ export const AskDoubtModal: React.FC<AskDoubtModalProps> = ({
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         isUrgent,
         pointsReward: isUrgent ? 150 : 50,
-        authorName: user?.name || 'Alex Mercer',
-        authorAvatar: user?.avatar,
+        authorName: user?.name || 'Scholar',
+        authorAvatar: user?.avatar || '',
       });
       onClose();
       if (onSuccess) onSuccess();

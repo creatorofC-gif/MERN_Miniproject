@@ -45,7 +45,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email: cleanEmail,
       passwordHash,
       points: 0,
-      streak: 1,
+      streak: 0,
       tier: 'Novice Scholar',
       year: '',
       branch: '',

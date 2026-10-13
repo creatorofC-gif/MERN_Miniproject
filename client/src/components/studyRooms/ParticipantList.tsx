@@ -45,12 +45,28 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
               key={idx}
               className="relative w-28 h-20 md:w-32 md:h-24 rounded-xl overflow-hidden border border-[#374151] bg-[#1E293B] shrink-0 group transition-all"
             >
-              {/* Thumbnail */}
-              <img
-                src={buddy.avatar}
-                alt={buddy.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-              />
+              {/* Thumbnail or Initials Tile */}
+              {buddy.avatar ? (
+                <img
+                  src={buddy.avatar}
+                  alt={buddy.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#151C2F] text-gray-200">
+                  <span className="text-base font-extrabold text-white tracking-wider">
+                    {buddy.name
+                      ? buddy.name
+                          .split(' ')
+                          .filter(Boolean)
+                          .map((n) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : 'ST'}
+                  </span>
+                </div>
+              )}
 
               {/* Status Indicator */}
               <div className="absolute top-2 right-2">

@@ -55,10 +55,10 @@ interface ActiveStreakCardProps {
 }
 
 export const ActiveStreakCard: React.FC<ActiveStreakCardProps> = ({
-  streakDays = 14,
-  daysToMilestone = 6,
+  streakDays = 0,
+  daysToMilestone = 7,
 }) => {
-  const progressPercent = ((streakDays % 10) / 10) * 100 || 60;
+  const progressPercent = ((streakDays % 10) / 10) * 100 || (streakDays > 0 ? 60 : 0);
 
   return (
     <Card className="p-6 flex flex-col justify-between h-44 bg-white border border-[#E5E7EB]">
@@ -83,24 +83,26 @@ export const ActiveStreakCard: React.FC<ActiveStreakCardProps> = ({
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-xs font-semibold text-[#667085]">{daysToMilestone} days until next milestone</p>
+        <p className="text-xs font-semibold text-[#667085]">
+          {streakDays === 0 ? 'Start your streak today' : `${daysToMilestone} days until next milestone`}
+        </p>
       </div>
     </Card>
   );
 };
 
 interface JourneyToMentorCardProps {
-  currentPoints: number;
-  targetPoints: number;
-  tierName: string;
+  currentPoints?: number;
+  targetPoints?: number;
+  tierName?: string;
 }
 
 export const JourneyToMentorCard: React.FC<JourneyToMentorCardProps> = ({
-  currentPoints = 1250,
-  targetPoints = 2000,
-  tierName = 'Scholar',
+  currentPoints = 0,
+  targetPoints = 1000,
+  tierName = 'Novice Scholar',
 }) => {
-  const progressPercent = Math.min(100, Math.max(0, ((currentPoints - 1000) / (targetPoints - 1000)) * 100));
+  const progressPercent = Math.min(100, Math.max(0, ((currentPoints) / (targetPoints)) * 100));
 
   return (
     <Card className="p-6 flex flex-col justify-between h-44 bg-white border border-[#E5E7EB]">

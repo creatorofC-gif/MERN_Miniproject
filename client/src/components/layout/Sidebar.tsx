@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
                 {user.name}
               </h4>
               <p className="text-[12px] font-semibold text-[#D97706] truncate">
-                {user.tier} • {user.points?.toLocaleString()} pts
+                {user.tier || 'Novice Scholar'} • {(user.points ?? 0).toLocaleString()} pts
               </p>
             </div>
           </NavLink>

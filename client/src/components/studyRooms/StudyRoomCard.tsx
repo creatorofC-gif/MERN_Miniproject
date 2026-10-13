@@ -29,15 +29,9 @@ export const StudyRoomCard: React.FC<StudyRoomCardProps> = ({ room, onJoin }) =>
 
   const isLive = room.status === 'live';
 
-  const defaultAvatars = [
-    { src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', name: 'Alex' },
-    { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80', name: 'Mike' },
-    { src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80', name: 'Elena' },
-  ];
-
-  const displayAvatars = room.participants?.length > 0
-    ? room.participants.map((p) => ({ src: p.avatar, name: p.name }))
-    : defaultAvatars;
+  const displayAvatars = (room.participants || [])
+    .filter((p) => p && p.name)
+    .map((p) => ({ src: p.avatar || '', name: p.name }));
 
   const handleJoin = () => {
     const roomId = room._id || room.id || '';
@@ -82,12 +76,18 @@ export const StudyRoomCard: React.FC<StudyRoomCardProps> = ({ room, onJoin }) =>
 
       {/* Bottom Actions Bar */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <AvatarGroup
-          items={displayAvatars}
-          totalCount={room.participantCount || 6}
-          max={3}
-          size="sm"
-        />
+        {displayAvatars.length > 0 ? (
+          <AvatarGroup
+            items={displayAvatars}
+            totalCount={room.participantCount ?? room.participants?.length ?? displayAvatars.length}
+            max={3}
+            size="sm"
+          />
+        ) : (
+          <span className="text-[11px] font-semibold text-[#98A2B3]">
+            Open room • Be first to join
+          </span>
+        )}
 
         <Button
           variant="primary"

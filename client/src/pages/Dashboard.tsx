@@ -42,6 +42,7 @@ export const Dashboard: React.FC = () => {
   const focusHours = (currentPoints * 0.04).toFixed(1);
   const targetPoints = 1000;
   const progressPercent = Math.min(Math.round((currentPoints / targetPoints) * 100), 100);
+  const userLevel = Math.max(1, Math.floor(currentPoints / 250) + 1);
 
   return (
     <div className="space-y-8 font-sans">
@@ -128,8 +129,10 @@ export const Dashboard: React.FC = () => {
               <span>Journey to Master Scholar</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-              {targetPoints > currentPoints
-                ? `You are ${targetPoints - currentPoints} points away from Scholar Rank Level 2`
+              {currentPoints === 0
+                ? 'Begin Your Scholar Journey'
+                : targetPoints > currentPoints
+                ? `You are ${targetPoints - currentPoints} points away from Scholar Rank Level ${userLevel + 1}`
                 : 'Congratulations! You have reached Master Tier'}
             </h3>
             <p className="text-xs text-gray-300">
@@ -139,7 +142,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="lg:w-80 w-full space-y-2.5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-gray-300">Level 4 Progress</span>
+              <span className="text-gray-300">Level {userLevel} Progress</span>
               <span className="text-amber-400 font-bold">{progressPercent}%</span>
             </div>
             <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden p-0.5 border border-white/10">
@@ -204,25 +207,47 @@ export const Dashboard: React.FC = () => {
           {/* Daily Goals Card */}
           <DailyGoals />
 
-          {/* Mini Study Tip Card */}
+          {/* Mini Study Tip / Recommended Action Card */}
           <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] shadow-xs space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-[#0057BE]">
               <Target className="w-4 h-4" />
               <span>Recommended Today</span>
             </div>
-            <h4 className="text-sm font-bold text-[#151C2F]">Calculus II Sprint • 4:00 PM</h4>
-            <p className="text-xs text-[#667085] leading-relaxed">
-              3 of your study circle buddies (Elena, Marcus, Priya) have reserved seats for the Fourier Transforms session.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              fullWidth
-              className="text-xs font-bold rounded-lg mt-1"
-              onClick={() => navigate('/study-rooms/calc2-deep-work')}
-            >
-              Reserve Seat
-            </Button>
+            {recentRooms.length > 0 ? (
+              <>
+                <h4 className="text-sm font-bold text-[#151C2F] truncate">
+                  {recentRooms[0].name} • Live Now
+                </h4>
+                <p className="text-xs text-[#667085] leading-relaxed line-clamp-2">
+                  {recentRooms[0].description || `Join peers studying ${recentRooms[0].subject} in this active focus session.`}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  fullWidth
+                  className="text-xs font-bold rounded-lg mt-1"
+                  onClick={() => navigate(`/study-rooms/${recentRooms[0]._id || recentRooms[0].id}`)}
+                >
+                  Join Room
+                </Button>
+              </>
+            ) : (
+              <>
+                <h4 className="text-sm font-bold text-[#151C2F]">Start Your First Focus Session</h4>
+                <p className="text-xs text-[#667085] leading-relaxed">
+                  Create a study room to set your timer, invite peers, and start building your focus streak.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  fullWidth
+                  className="text-xs font-bold rounded-lg mt-1"
+                  onClick={() => setCreateRoomOpen(true)}
+                >
+                  Create Room
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

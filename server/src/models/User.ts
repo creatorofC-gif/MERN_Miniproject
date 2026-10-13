@@ -33,7 +33,7 @@ const UserSchema = new Schema<IUser>(
     },
     tier: { type: String, default: 'Novice Scholar' },
     points: { type: Number, default: 0 },
-    streak: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
     year: { type: String, default: '' },
     branch: { type: String, default: '' },
     college: { type: String, default: '' },

@@ -45,7 +45,7 @@ export const doubtsService = {
     answerDataOrText: { content: string; authorName?: string; authorAvatar?: string } | string
   ): Promise<Doubt> => {
     const payload = typeof answerDataOrText === 'string'
-      ? { content: answerDataOrText, authorName: 'Alex Mercer' }
+      ? { content: answerDataOrText, authorName: 'Scholar' }
       : answerDataOrText;
 
     return request<Doubt>(`/doubts/${id}/answers`, {

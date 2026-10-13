@@ -44,7 +44,7 @@ const DoubtSchema = new Schema<IDoubt>(
     description: { type: String, required: true },
     codeSnippet: { type: String },
     authorName: { type: String, required: true },
-    authorAvatar: { type: String, default: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80' },
+    authorAvatar: { type: String, default: '' },
     authorTier: { type: String, default: 'Scholar' },
     authorId: { type: Schema.Types.ObjectId, ref: 'User' },
     subject: { type: String, required: true },
@@ -62,7 +62,7 @@ const DoubtSchema = new Schema<IDoubt>(
     answers: [
       {
         authorName: { type: String, required: true },
-        authorAvatar: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+        authorAvatar: { type: String, default: '' },
         authorTier: { type: String, default: 'Master' },
         authorId: { type: Schema.Types.ObjectId, ref: 'User' },
         content: { type: String, required: true },

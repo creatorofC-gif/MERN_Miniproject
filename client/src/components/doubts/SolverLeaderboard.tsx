@@ -10,34 +10,7 @@ interface SolverLeaderboardProps {
 }
 
 export const SolverLeaderboard: React.FC<SolverLeaderboardProps> = ({ solvers = [] }) => {
-  const defaultSolvers: TopSolver[] = [
-    {
-      _id: '1',
-      name: 'Elena R.',
-      tier: 'Master',
-      points: 12400,
-      streak: 42,
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      _id: '2',
-      name: 'Marcus T.',
-      tier: 'Scholar',
-      points: 9800,
-      streak: 28,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      _id: '3',
-      name: 'James L.',
-      tier: 'Scholar',
-      points: 8100,
-      streak: 19,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    },
-  ];
-
-  const list = solvers.length > 0 ? solvers.slice(0, 3) : defaultSolvers;
+  const list = solvers.slice(0, 3);
 
   return (
     <Card className="p-6 bg-white border border-[#E5E7EB] space-y-5">
@@ -47,32 +20,42 @@ export const SolverLeaderboard: React.FC<SolverLeaderboardProps> = ({ solvers = 
       </div>
 
       <div className="space-y-2.5">
-        {list.map((solver, idx) => {
-          const rank = idx + 1;
-          const formattedPoints = (solver.points / 1000).toFixed(1) + 'k';
+        {list.length === 0 ? (
+          <div className="py-6 text-center text-xs text-[#98A2B3] space-y-1">
+            <p className="font-semibold text-gray-600">No ranked solvers yet</p>
+            <p className="text-[11px]">Solve community doubts to claim the #1 spot on the leaderboard!</p>
+          </div>
+        ) : (
+          list.map((solver, idx) => {
+            const rank = idx + 1;
+            const formattedPoints =
+              solver.points >= 1000
+                ? (solver.points / 1000).toFixed(1) + 'k'
+                : String(solver.points || 0);
 
-          return (
-            <div
-              key={solver._id || idx}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FB] hover:bg-[#F3F4F6] transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-4 text-center font-bold text-sm text-[#F59E0B]">
-                  {rank}
-                </span>
-                <Avatar src={solver.avatar} name={solver.name} size="sm" />
-                <div>
-                  <h4 className="text-xs font-bold text-[#151C2F]">{solver.name}</h4>
-                  <span className="text-[11px] text-[#667085]">{solver.tier}</span>
+            return (
+              <div
+                key={solver._id || idx}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FB] hover:bg-[#F3F4F6] transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-4 text-center font-bold text-sm text-[#F59E0B]">
+                    {rank}
+                  </span>
+                  <Avatar src={solver.avatar} name={solver.name} size="sm" />
+                  <div>
+                    <h4 className="text-xs font-bold text-[#151C2F]">{solver.name}</h4>
+                    <span className="text-[11px] text-[#667085]">{solver.tier || 'Scholar'}</span>
+                  </div>
                 </div>
-              </div>
 
-              <span className="text-xs font-bold text-[#151C2F]">
-                {formattedPoints}
-              </span>
-            </div>
-          );
-        })}
+                <span className="text-xs font-bold text-[#151C2F]">
+                  {formattedPoints} pts
+                </span>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <div className="text-center pt-2">

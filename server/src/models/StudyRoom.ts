@@ -73,7 +73,7 @@ const StudyRoomSchema = new Schema<IStudyRoom>(
       {
         user: { type: Schema.Types.ObjectId, ref: 'User' },
         name: { type: String, required: true },
-        avatar: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+        avatar: { type: String, default: '' },
         joinedAt: { type: Date, default: Date.now },
         status: { type: String, enum: ['active', 'break', 'focus'], default: 'active' },
       }

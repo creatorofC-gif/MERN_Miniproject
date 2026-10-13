@@ -9,8 +9,10 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
-import { Doubt } from '../types';
+import { Doubt, TopSolver } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { doubtService } from '../services/doubts.service';
+import { usersService } from '../services/users.service';
 import { DoubtCard } from '../components/doubts/DoubtCard';
 import { SolverLeaderboard } from '../components/doubts/SolverLeaderboard';
 import { AskDoubtModal } from '../components/doubts/AskDoubtModal';
@@ -19,10 +21,12 @@ import { Button } from '../components/ui/Button';
 const FILTER_PILLS = ['All Doubts', 'High Reward', 'Needs Review', 'Unanswered'];
 
 export const Doubts: React.FC = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
 
   const [doubts, setDoubts] = useState<Doubt[]>([]);
+  const [topSolvers, setTopSolvers] = useState<TopSolver[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeFilter, setActiveFilter] = useState<string>('All Doubts');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
@@ -32,8 +36,14 @@ export const Doubts: React.FC = () => {
   const fetchDoubts = async () => {
     setIsLoading(true);
     try {
-      const data = await doubtService.getDoubts();
-      setDoubts(data);
+      const [doubtsData, solversData] = await Promise.all([
+        doubtService.getDoubts(),
+        usersService.getLeaderboard().catch(() => []),
+      ]);
+      setDoubts(doubtsData);
+      if (Array.isArray(solversData)) {
+        setTopSolvers(solversData);
+      }
     } catch (err) {
       console.error('Failed to load doubts:', err);
     } finally {
@@ -58,8 +68,14 @@ export const Doubts: React.FC = () => {
 
   const handleAddAnswer = async (doubtId: string, answerText: string) => {
     try {
-      const updated = await doubtService.addAnswer(doubtId, answerText);
+      const updated = await doubtService.addAnswer(doubtId, {
+        content: answerText,
+        authorName: user?.name || 'Scholar',
+        authorAvatar: user?.avatar,
+      });
       setDoubts((prev) => prev.map((d) => ((d._id === doubtId || d.id === doubtId) ? updated : d)));
+      // Refresh solvers leaderboard
+      usersService.getLeaderboard().then(setTopSolvers).catch(() => {});
     } catch (err) {
       console.error('Failed to post answer:', err);
     }
@@ -227,7 +243,7 @@ export const Doubts: React.FC = () => {
 
         {/* Right Column (4 cols): Solver Leaderboard & Bounty Perks */}
         <div className="lg:col-span-4 space-y-6">
-          <SolverLeaderboard />
+          <SolverLeaderboard solvers={topSolvers} />
 
           {/* Bounty Perks Explainer Card */}
           <div className="bg-gradient-to-br from-[#151C2F] to-[#1E293B] text-white rounded-2xl p-6 shadow-xs space-y-3">

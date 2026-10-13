@@ -41,13 +41,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const newUser = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: cleanEmail,
       passwordHash,
+      points: 0,
+      streak: 1,
+      tier: 'Novice Scholar',
+      year: '',
+      branch: '',
+      college: '',
+      bio: '',
       dailyGoals: [
-        { title: 'Study 2 hours', completed: true },
-        { title: 'Solve 1 Doubt', completed: false },
-        { title: 'Attend 1 Study Room', completed: false },
+        { title: 'Study 1 hour in a focus room', completed: false },
+        { title: 'Ask or answer 1 academic doubt', completed: false },
+        { title: 'Complete a Pomodoro study session', completed: false },
       ],
     });
 

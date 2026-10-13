@@ -23,16 +23,27 @@ export const connectDB = async (): Promise<boolean> => {
   }
 
   const isAtlas = MONGO_URI.includes('mongodb.net') || MONGO_URI.startsWith('mongodb+srv://');
-  console.log(`[Database] Connecting to ${isAtlas ? 'MongoDB Atlas Cloud' : 'MongoDB'}...`);
-
   try {
-    const conn = await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
-      retryWrites: true,
-      w: 'majority',
+    const options: mongoose.ConnectOptions = {
+      serverSelectionTimeoutMS: 8000,
+      autoIndex: true,
+    };
+
+    if (isAtlas) {
+      options.retryWrites = true;
+    }
+
+    const conn = await mongoose.connect(MONGO_URI, options);
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('[Database] Notice: Disconnected from MongoDB. Attempting auto-reconnect...');
     });
 
-    console.log(`[Database] Successfully connected to MongoDB (${isAtlas ? 'Atlas' : 'Local'}): ${conn.connection.host}`);
+    mongoose.connection.on('reconnected', () => {
+      console.log('[Database] Reconnected to MongoDB successfully.');
+    });
+
+    console.log(`[Database] Successfully connected to MongoDB (${isAtlas ? 'Atlas Cloud' : 'Local'}): ${conn.connection.host}`);
     console.log(`[Database] Database Name: ${conn.connection.name}`);
     return true;
   } catch (error: any) {

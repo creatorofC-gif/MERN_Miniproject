@@ -172,10 +172,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <Avatar
-                        src={
-                          msg.senderAvatar ||
-                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-                        }
+                        src={msg.senderAvatar}
                         name={msg.senderName}
                         size="xs"
                       />

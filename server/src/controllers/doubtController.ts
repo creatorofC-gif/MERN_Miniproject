@@ -71,7 +71,7 @@ export const createDoubt = async (req: AuthRequest, res: Response): Promise<void
     }
 
     let authorName = 'Student';
-    let authorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let authorAvatar = '';
     const authorId = req.user?.id;
 
     if (authorId) {
@@ -164,7 +164,7 @@ export const addAnswer = async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     let authorName = bodyAuthorName || 'Scholar';
-    let authorAvatar = bodyAuthorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    let authorAvatar = bodyAuthorAvatar || '';
 
     if (req.user?.id) {
       try {

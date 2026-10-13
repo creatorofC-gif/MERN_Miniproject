@@ -10,25 +10,37 @@ interface Goal {
 }
 
 export const DailyGoals: React.FC = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const defaultGoals: Goal[] = [
+    { title: 'Study 1 hour in a focus room', completed: false },
+    { title: 'Ask or answer 1 academic doubt', completed: false },
+    { title: 'Complete a Pomodoro study session', completed: false },
+  ];
+
   const [goals, setGoals] = useState<Goal[]>(
-    user?.dailyGoals || [
-      { title: 'Study 2 hours', completed: true },
-      { title: 'Solve 1 Doubt', completed: false },
-      { title: 'Attend 1 Study Room', completed: false },
-    ]
+    user?.dailyGoals && user.dailyGoals.length > 0 ? user.dailyGoals : defaultGoals
   );
 
+  React.useEffect(() => {
+    if (user?.dailyGoals && user.dailyGoals.length > 0) {
+      setGoals(user.dailyGoals);
+    }
+  }, [user?.dailyGoals]);
+
   const toggleGoal = async (idx: number) => {
-    const updated = [...goals];
-    updated[idx].completed = !updated[idx].completed;
+    const updated = goals.map((g, i) => (i === idx ? { ...g, completed: !g.completed } : g));
     setGoals(updated);
+    if (user && setUser) {
+      setUser({ ...user, dailyGoals: updated });
+    }
     try {
       await usersService.toggleDailyGoal(idx);
     } catch (e) {
-      // Local state is updated
+      // Local state is preserved
     }
   };
+
+  const completedCount = goals.filter((g) => g.completed).length;
 
   return (
     <Card className="p-6 bg-[#FAF9FF] border border-[#EDE9FE] flex flex-col justify-between h-64">
@@ -72,8 +84,8 @@ export const DailyGoals: React.FC = () => {
       </div>
 
       <div className="text-[12px] text-[#8B5CF6] font-semibold bg-[#F5F3FF] py-1.5 px-3 rounded-lg flex items-center justify-between">
-        <span>1 of 3 completed</span>
-        <span>+50 XP reward</span>
+        <span>{completedCount} of {goals.length} completed</span>
+        <span>+{completedCount * 25} XP reward</span>
       </div>
     </Card>
   );

@@ -29,15 +29,15 @@ const UserSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     avatar: { 
       type: String, 
-      default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' 
+      default: '' 
     },
-    tier: { type: String, default: 'Master Tier' },
-    points: { type: Number, default: 1250 },
-    streak: { type: Number, default: 14 },
-    year: { type: String, default: '3rd Year' },
-    branch: { type: String, default: 'Computer Science' },
-    college: { type: String, default: 'Stanford University' },
-    bio: { type: String, default: 'Focused on algorithms, distributed systems, and calculus.' },
+    tier: { type: String, default: 'Novice Scholar' },
+    points: { type: Number, default: 0 },
+    streak: { type: Number, default: 1 },
+    year: { type: String, default: '' },
+    branch: { type: String, default: '' },
+    college: { type: String, default: '' },
+    bio: { type: String, default: '' },
     role: { type: String, enum: ['student', 'mentor', 'admin'], default: 'student' },
     dailyGoals: [
       {

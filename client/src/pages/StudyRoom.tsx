@@ -91,9 +91,7 @@ export const StudyRoom: React.FC = () => {
       socket.emit('join_room', {
         roomId: id,
         userName: user?.name || 'Student',
-        userAvatar:
-          user?.avatar ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        userAvatar: user?.avatar || '',
       });
     });
 
@@ -111,9 +109,7 @@ export const StudyRoom: React.FC = () => {
         const mappedParticipants: Participant[] = members.map((m: any, idx: number) => ({
           id: m.socketId || `p-${idx}`,
           name: m.userName || 'Student',
-          avatar:
-            m.userAvatar ||
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          avatar: m.userAvatar || '',
           isMuted: true,
           status: m.status || 'focus',
           studyHours: 0,
@@ -185,9 +181,7 @@ export const StudyRoom: React.FC = () => {
     const payload = {
       roomId: id,
       senderName: user?.name || 'Student',
-      senderAvatar:
-        user?.avatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      senderAvatar: user?.avatar || '',
       text,
       type,
     };

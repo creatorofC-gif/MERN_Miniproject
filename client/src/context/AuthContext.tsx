@@ -43,6 +43,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  useEffect(() => {
+    if (token) {
+      authService
+        .getMe()
+        .then((freshUser) => {
+          if (freshUser) {
+            setUser(freshUser);
+            localStorage.setItem('studysphere_user', JSON.stringify(freshUser));
+          }
+        })
+        .catch(() => {
+          // If token is invalid or expired
+        });
+    }
+  }, [token]);
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {

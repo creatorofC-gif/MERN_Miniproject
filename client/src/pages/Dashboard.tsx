@@ -37,7 +37,10 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const currentPoints = user?.points ?? 0;
-  const targetPoints = 2000;
+  const currentStreak = user?.streak ?? 0;
+  const doubtsSolved = Math.floor(currentPoints / 50);
+  const focusHours = (currentPoints * 0.04).toFixed(1);
+  const targetPoints = 1000;
   const progressPercent = Math.min(Math.round((currentPoints / targetPoints) * 100), 100);
 
   return (
@@ -46,10 +49,12 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#151C2F] tracking-tight">
-            Welcome back, {user?.name || 'Scholar'}! 👋
+            Welcome, {user?.name || 'Scholar'}! 👋
           </h1>
           <p className="text-sm text-[#667085] mt-1">
-            Your learning velocity is up <strong className="text-[#10B981]">12%</strong> compared to last week. Keep the momentum going!
+            {currentPoints === 0
+              ? 'Your brand new dashboard is ready! Jump into a study room or solve doubts to build your mastery score.'
+              : `Great momentum! You currently have ${currentPoints} mastery points and a ${currentStreak}-day focus streak.`}
           </p>
         </div>
 
@@ -80,34 +85,34 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Active Streak"
-          value={`${user?.streak ?? 0} Days`}
-          subtitle="+2 days from last week"
+          value={`${currentStreak} Day${currentStreak === 1 ? '' : 's'}`}
+          subtitle={currentStreak > 0 ? 'Consecutive focus streak' : 'Start day 1 today'}
           icon={Flame}
-          trend="+14%"
+          trend={currentStreak > 0 ? '+1 day' : 'New'}
           color="amber"
         />
         <StatCard
           title="Weekly Focus"
-          value="28.5 hrs"
-          subtitle="Goal: 30 hrs (95%)"
+          value={`${focusHours} hrs`}
+          subtitle="Total logged focus time"
           icon={Clock}
-          trend="+3.2 hrs"
+          trend={Number(focusHours) > 0 ? `+${focusHours}h` : '0h'}
           color="blue"
         />
         <StatCard
           title="Doubts Solved"
-          value="42"
-          subtitle="Top 5% campus solver"
+          value={String(doubtsSolved)}
+          subtitle={doubtsSolved > 0 ? 'Verified solutions provided' : 'Solve doubts to earn points'}
           icon={CheckCircle2}
-          trend="+6 today"
+          trend={doubtsSolved > 0 ? `+${doubtsSolved}` : 'Start'}
           color="purple"
         />
         <StatCard
           title="Bounty Points"
           value={currentPoints.toLocaleString()}
-          subtitle="Master Tier qualification"
+          subtitle={user?.tier || 'Novice Scholar'}
           icon={Trophy}
-          trend="+150 pts"
+          trend={`+${currentPoints} pts`}
           color="green"
         />
       </div>
@@ -123,10 +128,12 @@ export const Dashboard: React.FC = () => {
               <span>Journey to Master Scholar</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-              You are {targetPoints - currentPoints} points away from unlocking 2X Room Multiplier
+              {targetPoints > currentPoints
+                ? `You are ${targetPoints - currentPoints} points away from Scholar Rank Level 2`
+                : 'Congratulations! You have reached Master Tier'}
             </h3>
             <p className="text-xs text-gray-300">
-              Answer 3 more doubts or complete 2 deep-work study sessions this week to reach Master Tier.
+              Answer doubts or complete focused study sessions in collaborative rooms to earn rank multipliers.
             </p>
           </div>
 

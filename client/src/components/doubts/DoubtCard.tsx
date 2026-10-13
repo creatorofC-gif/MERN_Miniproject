@@ -89,9 +89,7 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
     const newAns: Answer = {
       _id: `ans-${Date.now()}`,
       authorName: user?.name || 'Scholar',
-      authorAvatar:
-        user?.avatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      authorAvatar: user?.avatar || '',
       authorTier: user?.tier || 'Scholar Tier',
       content,
       isAccepted: true,
@@ -336,10 +334,7 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Avatar
-                      src={
-                        ans.authorAvatar ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-                      }
+                      src={ans.authorAvatar}
                       name={ans.authorName}
                       size="xs"
                     />

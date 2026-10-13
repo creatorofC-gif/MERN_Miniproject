@@ -57,7 +57,7 @@ export const setupRoomSocket = (io: Server): void => {
       socket.join(roomId);
 
       let userName = 'Student';
-      let userAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+      let userAvatar = '';
       const authUserId = socket.data.user?.id;
 
       if (authUserId) {

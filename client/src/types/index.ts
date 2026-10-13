@@ -29,14 +29,25 @@ export interface Participant {
   joinedAt?: string;
 }
 
+export interface DoubtReply {
+  _id: string;
+  senderName: string;
+  senderAvatar?: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ChatMessage {
   _id?: string;
   senderName: string;
   senderAvatar: string;
   senderId?: string;
   text: string;
-  type?: 'message' | 'doubt_alert' | 'system';
+  type?: 'message' | 'doubt_alert' | 'system' | 'doubt_answer';
   createdAt: string;
+  doubtId?: string;
+  doubtReplies?: DoubtReply[];
+  isResolved?: boolean;
 }
 
 export interface StudyRoom {

@@ -17,12 +17,19 @@ import { Button } from '../components/ui/Button';
 export const Profile: React.FC = () => {
   const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user?.name || 'Alex Mercer');
-  const [college, setCollege] = useState(user?.college || 'Stanford University');
-  const [branch, setBranch] = useState(user?.branch || 'Computer Science & Math');
-  const [bio, setBio] = useState(
-    user?.bio || 'Focused on algorithms, distributed systems, and advanced calculus.'
-  );
+  const [name, setName] = useState(user?.name || '');
+  const [college, setCollege] = useState(user?.college || '');
+  const [branch, setBranch] = useState(user?.branch || '');
+  const [bio, setBio] = useState(user?.bio || '');
+
+  React.useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setCollege(user.college || '');
+      setBranch(user.branch || '');
+      setBio(user.bio || '');
+    }
+  }, [user]);
 
   const handleSave = () => {
     if (user && setUser) {
@@ -52,14 +59,14 @@ export const Profile: React.FC = () => {
           <div className="flex items-center gap-5">
             <Avatar
               src={user?.avatar}
-              name={user?.name || 'Alex Mercer'}
+              name={user?.name || 'Scholar'}
               size="xl"
               ring="amber"
             />
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-extrabold text-[#151C2F]">
-                  {user?.name || 'Alex Mercer'}
+                  {user?.name || 'Scholar'}
                 </h1>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706]">
                   {user?.tier || 'Master Tier'}

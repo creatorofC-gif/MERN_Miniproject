@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getDoubts, getDoubtById, createDoubt, claimDoubt, addAnswer, voteDoubt } from '../controllers/doubtController.js';
-import { authenticateUser } from '../middleware/authMiddleware.js';
+import { authenticateUser, optionalAuth } from '../middleware/authMiddleware.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
@@ -20,8 +20,8 @@ const voteLimiter = rateLimiter({
 router.get('/', getDoubts);
 router.get('/:id', getDoubtById);
 router.post('/', authenticateUser, createLimiter, createDoubt);
-router.post('/:id/claim', authenticateUser, claimDoubt);
-router.post('/:id/answers', authenticateUser, addAnswer);
-router.post('/:id/vote', authenticateUser, voteLimiter, voteDoubt);
+router.post('/:id/claim', optionalAuth, claimDoubt);
+router.post('/:id/answers', optionalAuth, addAnswer);
+router.post('/:id/vote', optionalAuth, voteLimiter, voteDoubt);
 
 export default router;

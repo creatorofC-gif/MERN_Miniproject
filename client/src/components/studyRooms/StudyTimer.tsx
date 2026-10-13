@@ -113,11 +113,11 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onTimerSync, onTimerActi
         </svg>
 
         {/* Center Content */}
-        <div className="absolute flex flex-col items-center text-center">
-          <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
+        <div className="absolute flex flex-col items-center text-center select-none pointer-events-none">
+          <span className="text-5xl md:text-6xl font-black text-[#151C2F] tracking-tight drop-shadow-xs">
             {formatTime(secondsLeft)}
           </span>
-          <span className="text-xs font-bold text-[#8B5CF6] tracking-widest mt-2 uppercase">
+          <span className="text-xs font-extrabold text-[#8B5CF6] tracking-widest mt-2 uppercase bg-[#F5F3FF] px-2.5 py-0.5 rounded-full border border-[#DDD6FE]">
             {mode === 'focus' ? 'FOCUSING' : 'RECHARGING'}
           </span>
         </div>

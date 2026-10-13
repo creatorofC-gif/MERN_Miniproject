@@ -26,6 +26,7 @@ export interface IDoubt extends Document {
   isUrgent: boolean;
   aiHelpTimerSeconds: number;
   status: 'open' | 'claimed' | 'solved';
+  isResolved?: boolean;
   claimedBy?: {
     userId: mongoose.Types.ObjectId;
     name: string;
@@ -52,6 +53,7 @@ const DoubtSchema = new Schema<IDoubt>(
     isUrgent: { type: Boolean, default: false },
     aiHelpTimerSeconds: { type: Number, default: 300 },
     status: { type: String, enum: ['open', 'claimed', 'solved'], default: 'open' },
+    isResolved: { type: Boolean, default: false },
     claimedBy: {
       userId: { type: Schema.Types.ObjectId, ref: 'User' },
       name: { type: String },

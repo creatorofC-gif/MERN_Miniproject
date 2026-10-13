@@ -17,6 +17,8 @@ import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
 
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
 export const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -27,17 +29,48 @@ export const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* App Layout Pages (Dashboard, Rooms, Doubts, etc.) */}
+          {/* App Layout Pages */}
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Protected Routes (Require authenticated session) */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/study-rooms/:id"
+              element={
+                <ProtectedRoute>
+                  <StudyRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Public Community & Info Pages */}
             <Route path="/study-rooms" element={<StudyRooms />} />
-            <Route path="/study-rooms/:id" element={<StudyRoom />} />
             <Route path="/doubts" element={<Doubts />} />
             <Route path="/ai-tools" element={<AITools />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* 404 Fallback */}

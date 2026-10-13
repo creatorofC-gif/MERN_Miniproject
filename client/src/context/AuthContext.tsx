@@ -10,6 +10,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  awardPoints: (points: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,8 +76,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('studysphere_user');
   };
 
+  const awardPoints = (points: number) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, points: (prev.points || 0) + points };
+      localStorage.setItem('studysphere_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, setUser, awardPoints }}>
       {children}
     </AuthContext.Provider>
   );

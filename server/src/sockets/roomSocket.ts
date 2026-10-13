@@ -161,22 +161,78 @@ export const setupRoomSocket = (io: Server): void => {
       if (!roomId || !title) return;
 
       const senderName = user?.userName || 'Student';
+      const senderAvatar = user?.userAvatar || '';
+      const doubtId = `doubt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
 
       const alertMessage = {
-        _id: `alert-${Date.now()}`,
-        senderName: 'Live Doubt Raised',
-        senderAvatar: '',
+        _id: doubtId,
+        senderName,
+        senderAvatar,
+        senderId: user?.userId,
         text: title,
         type: 'doubt_alert',
+        doubtReplies: [],
+        isResolved: false,
         createdAt: new Date().toISOString(),
       };
 
       io.to(roomId).emit('new_message', alertMessage);
       io.to(roomId).emit('doubt_alert_popup', {
+        doubtId,
         senderName,
         title,
         timestamp: new Date().toISOString(),
       });
+    });
+
+    // Reply to a Live Doubt in the Study Room
+    socket.on('reply_room_doubt', async (data: { roomId?: string; doubtId?: string; text?: string }) => {
+      const user = activeUsers.get(socket.id);
+      const roomId = typeof data?.roomId === 'string' ? data.roomId.trim() : user?.roomId || '';
+      const doubtId = typeof data?.doubtId === 'string' ? data.doubtId.trim() : '';
+      const text = typeof data?.text === 'string' ? data.text.trim().slice(0, 2000) : '';
+
+      if (!roomId || !doubtId || !text) return;
+
+      const reply = {
+        _id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        senderName: user?.userName || 'Student',
+        senderAvatar: user?.userAvatar || '',
+        text,
+        createdAt: new Date().toISOString(),
+      };
+
+      io.to(roomId).emit('room_doubt_replied', {
+        doubtId,
+        reply,
+      });
+
+      if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
+        StudyRoom.updateOne(
+          { _id: roomId, 'messages._id': doubtId },
+          { $push: { 'messages.$.doubtReplies': reply } }
+        ).catch(() => {});
+      }
+    });
+
+    // Mark a Room Doubt as Resolved
+    socket.on('resolve_room_doubt', (data: { roomId?: string; doubtId?: string }) => {
+      const user = activeUsers.get(socket.id);
+      const roomId = typeof data?.roomId === 'string' ? data.roomId.trim() : user?.roomId || '';
+      const doubtId = typeof data?.doubtId === 'string' ? data.doubtId.trim() : '';
+      if (!roomId || !doubtId) return;
+
+      io.to(roomId).emit('room_doubt_resolved', {
+        doubtId,
+        resolvedBy: user?.userName || 'Student',
+      });
+
+      if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
+        StudyRoom.updateOne(
+          { _id: roomId, 'messages._id': doubtId },
+          { $set: { 'messages.$.isResolved': true } }
+        ).catch(() => {});
+      }
     });
 
     // Sync Pomodoro Timer across all participants in the room

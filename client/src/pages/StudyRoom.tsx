@@ -28,6 +28,7 @@ export const StudyRoom: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [liveCount, setLiveCount] = useState<number>(0);
   const [alertBanner, setAlertBanner] = useState<{ sender: string; title: string } | null>(null);
+  const [roomChatTab, setRoomChatTab] = useState<'chat' | 'doubts'>('chat');
   const [externalSync, setExternalSync] = useState<{
     action: string;
     timeRemaining: number;
@@ -134,12 +135,45 @@ export const StudyRoom: React.FC = () => {
       }, 7000);
     });
 
+    // Listen to real-time doubt replies from peers in this room
+    socket.on('room_doubt_replied', ({ doubtId, reply }: { doubtId: string; reply: any }) => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg._id === doubtId || (msg as any).doubtId === doubtId) {
+            const replies = msg.doubtReplies || [];
+            return {
+              ...msg,
+              doubtReplies: [...replies, reply],
+            };
+          }
+          return msg;
+        })
+      );
+    });
+
+    // Listen to real-time doubt resolution from peers in this room
+    socket.on('room_doubt_resolved', ({ doubtId }: { doubtId: string }) => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg._id === doubtId || (msg as any).doubtId === doubtId) {
+            return {
+              ...msg,
+              isResolved: true,
+            };
+          }
+          return msg;
+        })
+      );
+    });
+
     return () => {
       socket.off('connect');
       socket.off('new_message');
       socket.off('room_presence_update');
       socket.off('timer_sync');
       socket.off('doubt_alert_popup');
+      socket.off('room_doubt_replied');
+      socket.off('room_doubt_resolved');
       socket.disconnect();
     };
   }, [id, room, user]);
@@ -169,6 +203,25 @@ export const StudyRoom: React.FC = () => {
       roomId: id,
       senderName: user?.name || 'Student',
       title: doubtTitle,
+    });
+  };
+
+  // Reply to Room Doubt via Socket
+  const handleReplyDoubt = (doubtId: string, text: string) => {
+    if (!socketRef.current || !id) return;
+    socketRef.current.emit('reply_room_doubt', {
+      roomId: id,
+      doubtId,
+      text,
+    });
+  };
+
+  // Mark Room Doubt Resolved via Socket
+  const handleResolveDoubt = (doubtId: string) => {
+    if (!socketRef.current || !id) return;
+    socketRef.current.emit('resolve_room_doubt', {
+      roomId: id,
+      doubtId,
     });
   };
 
@@ -287,10 +340,10 @@ export const StudyRoom: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => navigate(`/doubts`)}
-            className="px-3 py-1.5 rounded-lg bg-[#F59E0B] text-white text-xs font-bold hover:bg-[#D97706] cursor-pointer"
+            onClick={() => setRoomChatTab('doubts')}
+            className="px-3.5 py-1.5 rounded-lg bg-[#F59E0B] text-white text-xs font-bold hover:bg-[#D97706] cursor-pointer shadow-xs"
           >
-            Help Answer
+            Help Answer in Room
           </button>
         </div>
       )}
@@ -326,6 +379,11 @@ export const StudyRoom: React.FC = () => {
             messages={messages}
             onSendMessage={handleSendMessage}
             onRaiseDoubt={handleRaiseDoubt}
+            onReplyDoubt={handleReplyDoubt}
+            onResolveDoubt={handleResolveDoubt}
+            currentUserId={user?.id}
+            activeTab={roomChatTab}
+            onTabChange={setRoomChatTab}
           />
         </div>
       </div>

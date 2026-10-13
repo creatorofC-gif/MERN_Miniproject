@@ -36,7 +36,7 @@ export const Dashboard: React.FC = () => {
     doubtService.getDoubts().then(setLatestDoubts).catch(() => {});
   }, []);
 
-  const currentPoints = user?.points || 1250;
+  const currentPoints = user?.points ?? 0;
   const targetPoints = 2000;
   const progressPercent = Math.min(Math.round((currentPoints / targetPoints) * 100), 100);
 
@@ -80,7 +80,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Active Streak"
-          value={`${user?.streak || 14} Days`}
+          value={`${user?.streak ?? 0} Days`}
           subtitle="+2 days from last week"
           icon={Flame}
           trend="+14%"

@@ -8,6 +8,14 @@ export interface IRoomMember {
   status: 'active' | 'break' | 'focus';
 }
 
+export interface IRoomDoubtReply {
+  _id?: string;
+  senderName: string;
+  senderAvatar?: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface IRoomMessage {
   _id?: string;
   senderName: string;
@@ -15,6 +23,8 @@ export interface IRoomMessage {
   senderId?: string;
   text: string;
   type?: 'message' | 'doubt_alert' | 'system';
+  doubtReplies?: IRoomDoubtReply[];
+  isResolved?: boolean;
   createdAt: Date;
 }
 
@@ -83,6 +93,15 @@ const StudyRoomSchema = new Schema<IStudyRoom>(
         senderId: { type: String },
         text: { type: String, required: true },
         type: { type: String, enum: ['message', 'doubt_alert', 'system'], default: 'message' },
+        doubtReplies: [
+          {
+            senderName: { type: String, required: true },
+            senderAvatar: { type: String, default: '' },
+            text: { type: String, required: true },
+            createdAt: { type: Date, default: Date.now },
+          }
+        ],
+        isResolved: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now },
       }
     ],

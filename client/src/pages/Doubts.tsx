@@ -218,6 +218,7 @@ export const Doubts: React.FC = () => {
                 doubt={doubt}
                 onUpvote={handleUpvote}
                 onAddAnswer={handleAddAnswer}
+                onRefresh={fetchDoubts}
                 isHighlighted={highlightedId === (doubt._id || doubt.id)}
               />
             ))

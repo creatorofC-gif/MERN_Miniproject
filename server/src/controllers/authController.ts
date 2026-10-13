@@ -3,18 +3,35 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_insecure_jwt_secret_for_local_testing_only';
+import { JWT_SECRET } from '../config/jwt.js';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      res.status(400).json({ message: 'Name, email, and password are required' });
+    if (
+      !name ||
+      typeof name !== 'string' ||
+      !email ||
+      typeof email !== 'string' ||
+      !password ||
+      typeof password !== 'string'
+    ) {
+      res.status(400).json({ message: 'Name, email, and password are required and must be valid strings' });
       return;
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail.includes('@') || cleanEmail.length > 100) {
+      res.status(400).json({ message: 'Please provide a valid email address' });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({ message: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    const existing = await User.findOne({ email: cleanEmail });
     if (existing) {
       res.status(400).json({ message: 'User already exists with this email' });
       return;
@@ -66,12 +83,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400).json({ message: 'Email and password are required' });
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      res.status(400).json({ message: 'Email and password are required and must be valid strings' });
       return;
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       res.status(400).json({ message: 'Invalid credentials' });
       return;

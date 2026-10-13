@@ -24,15 +24,14 @@ export const Login: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid email or password');
+      setError(err?.message || err?.response?.data?.message || 'Invalid email or password');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleOAuthDemo = (provider: string) => {
-    login(`${provider.toLowerCase()}@studysphere.io`, 'demo123');
-    navigate('/dashboard');
+    setError(`${provider} sign-in is not configured yet. Please sign in with your email and password.`);
   };
 
   return (

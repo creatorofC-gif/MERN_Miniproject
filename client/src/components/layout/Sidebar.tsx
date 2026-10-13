@@ -48,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
         </NavLink>
 
         {/* User Card */}
-        {user && (
+        {user ? (
           <NavLink
             to="/profile"
             className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#F8F9FB] transition-colors"
@@ -67,6 +67,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
                 {user.tier} • {user.points?.toLocaleString()} pts
               </p>
             </div>
+          </NavLink>
+        ) : (
+          <NavLink
+            to="/login"
+            className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F8F9FB] text-xs font-bold text-[#0057BE] transition-colors"
+          >
+            Sign In / Register
           </NavLink>
         )}
 

@@ -10,21 +10,6 @@ export interface LatestDoubtsProps {
 }
 
 export const LatestDoubts: React.FC<LatestDoubtsProps> = ({ doubts = [], onSelectDoubt }) => {
-  const displayDoubts = doubts.length > 0 ? doubts.slice(0, 2) : [
-    {
-      _id: 'doubt_1',
-      title: 'Help with Organic Chem...',
-      isUrgent: true,
-      pointsReward: 50,
-    },
-    {
-      _id: 'doubt_2',
-      title: 'Physics: Thermodynamics eq...',
-      isUrgent: false,
-      pointsReward: 120,
-    },
-  ];
-
   return (
     <Card className="p-6 bg-white border border-[#E5E7EB] flex flex-col justify-between h-64">
       <div>
@@ -39,33 +24,42 @@ export const LatestDoubts: React.FC<LatestDoubtsProps> = ({ doubts = [], onSelec
         </div>
 
         <div className="space-y-3">
-          {displayDoubts.map((doubt, idx) => (
-            <NavLink
-              key={doubt._id}
-              to="/doubts"
-              className={`block p-3 rounded-xl border border-[#E5E7EB] border-l-4 ${
-                doubt.isUrgent || idx === 0 ? 'border-l-[#F26161]' : 'border-l-[#F59E0B]'
-              } hover:bg-[#F8F9FB] transition-all`}
-            >
-              <h4 className="text-sm font-semibold text-[#151C2F] truncate mb-2">
-                {doubt.title}
-              </h4>
-              <div className="flex items-center gap-2">
-                {doubt.isUrgent || idx === 0 ? (
-                  <Badge variant="urgent" size="sm">
-                    Urgent
-                  </Badge>
-                ) : (
-                  <Badge variant="amber" size="sm">
-                    Bounty
-                  </Badge>
-                )}
-                <span className="text-xs font-bold text-[#667085]">
-                  +{doubt.pointsReward || (idx === 0 ? 50 : 120)} pts
-                </span>
-              </div>
-            </NavLink>
-          ))}
+          {doubts.length === 0 ? (
+            <div className="py-7 text-center text-xs text-[#98A2B3]">
+              <p>No unanswered doubts right now.</p>
+              <NavLink to="/doubts" className="text-[#0057BE] font-semibold hover:underline mt-1.5 inline-block">
+                Browse academic doubts
+              </NavLink>
+            </div>
+          ) : (
+            doubts.slice(0, 2).map((doubt, idx) => (
+              <NavLink
+                key={doubt._id || doubt.id}
+                to="/doubts"
+                className={`block p-3 rounded-xl border border-[#E5E7EB] border-l-4 ${
+                  doubt.isUrgent || idx === 0 ? 'border-l-[#F26161]' : 'border-l-[#F59E0B]'
+                } hover:bg-[#F8F9FB] transition-all`}
+              >
+                <h4 className="text-sm font-semibold text-[#151C2F] truncate mb-2">
+                  {doubt.title}
+                </h4>
+                <div className="flex items-center gap-2">
+                  {doubt.isUrgent || idx === 0 ? (
+                    <Badge variant="urgent" size="sm">
+                      Urgent
+                    </Badge>
+                  ) : (
+                    <Badge variant="amber" size="sm">
+                      Bounty
+                    </Badge>
+                  )}
+                  <span className="text-xs font-bold text-[#667085]">
+                    +{doubt.pointsReward || (idx === 0 ? 50 : 120)} pts
+                  </span>
+                </div>
+              </NavLink>
+            ))
+          )}
         </div>
       </div>
 

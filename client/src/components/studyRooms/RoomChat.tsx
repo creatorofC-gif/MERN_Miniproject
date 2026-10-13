@@ -90,55 +90,61 @@ export const RoomChat: React.FC<RoomChatProps> = ({
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
-        <div className="text-center text-[11px] font-semibold text-[#98A2B3]">
-          Session Started 15m ago
-        </div>
+        {filteredMessages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center text-[#98A2B3] py-8">
+            <p className="text-xs font-medium">No messages yet. Say hello or share your study goal!</p>
+          </div>
+        ) : (
+          filteredMessages.map((msg, idx) => {
+            const timeStr = msg.createdAt
+              ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : '';
 
-        {filteredMessages.map((msg, idx) => {
-          if (msg.type === 'doubt_alert') {
-            return (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-[#EF4444] font-bold">
-                  <div className="w-4 h-4 rounded-full bg-[#FEE2E2] flex items-center justify-center">
-                    <AlertCircle className="w-3 h-3" />
+            if (msg.type === 'doubt_alert') {
+              return (
+                <div key={idx} className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-[#EF4444] font-bold">
+                    <div className="w-4 h-4 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+                      <AlertCircle className="w-3 h-3" />
+                    </div>
+                    <span>Live Doubt Raised</span>
+                    {timeStr && <span className="text-[10px] text-[#98A2B3] font-normal">{timeStr}</span>}
                   </div>
-                  <span>Live Doubt Raised</span>
-                  <span className="text-[10px] text-[#98A2B3] font-normal">10:05 AM</span>
+                  <div className="p-3 bg-[#FFF5F5] border-l-4 border-l-[#F26161] rounded-r-lg text-xs font-medium text-[#151C2F]">
+                    {msg.text}
+                  </div>
                 </div>
-                <div className="p-3 bg-[#FFF5F5] border-l-4 border-l-[#F26161] rounded-r-lg text-xs font-medium text-[#151C2F]">
+              );
+            }
+
+            if (msg.type === 'system') {
+              return (
+                <div key={idx} className="text-center text-[11px] text-[#667085] italic">
                   {msg.text}
                 </div>
-              </div>
-            );
-          }
+              );
+            }
 
-          if (msg.type === 'system') {
             return (
-              <div key={idx} className="text-center text-[11px] text-[#667085] italic">
-                {msg.text}
+              <div key={idx} className="flex items-start gap-2.5">
+                <Avatar
+                  src={msg.senderAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
+                  name={msg.senderName}
+                  size="sm"
+                />
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <span className="text-xs font-bold text-[#151C2F]">{msg.senderName}</span>
+                    {timeStr && <span className="text-[10px] text-[#98A2B3]">{timeStr}</span>}
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#F8F9FB] border border-[#E5E7EB]/50 text-xs text-[#151C2F] max-w-sm inline-block leading-relaxed">
+                    {msg.text}
+                  </div>
+                </div>
               </div>
             );
-          }
-
-          return (
-            <div key={idx} className="flex items-start gap-2.5">
-              <Avatar
-                src={msg.senderAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
-                name={msg.senderName}
-                size="sm"
-              />
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2 mb-0.5">
-                  <span className="text-xs font-bold text-[#151C2F]">{msg.senderName}</span>
-                  <span className="text-[10px] text-[#98A2B3]">10:04 AM</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#F8F9FB] border border-[#E5E7EB]/50 text-xs text-[#151C2F] max-w-sm inline-block leading-relaxed">
-                  {msg.text}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+          })
+        )}
         <div ref={messagesEndRef} />
       </div>
 

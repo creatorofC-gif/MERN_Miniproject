@@ -52,12 +52,15 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onTimerSync, onTimerActi
   const toggleTimer = () => {
     const nextState = !isRunning;
     setIsRunning(nextState);
-    if (onTimerSync) onTimerSync(nextState ? 'start' : 'pause', secondsLeft, nextState);
+    const action = nextState ? 'start' : 'pause';
+    if (onTimerAction) onTimerAction(action, secondsLeft, nextState, mode);
+    if (onTimerSync) onTimerSync(action, secondsLeft, nextState);
   };
 
   const resetTimer = () => {
     setIsRunning(false);
     setSecondsLeft(initialTime);
+    if (onTimerAction) onTimerAction('reset', initialTime, false, mode);
     if (onTimerSync) onTimerSync('reset', initialTime, false);
   };
 
@@ -67,6 +70,7 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onTimerSync, onTimerActi
     setMode(nextMode);
     setSecondsLeft(nextTime);
     setIsRunning(true);
+    if (onTimerAction) onTimerAction('skip', nextTime, true, nextMode);
     if (onTimerSync) onTimerSync('skip', nextTime, true);
   };
 

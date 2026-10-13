@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Flame,
@@ -12,6 +12,9 @@ import {
   Target,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { StudyRoom, Doubt } from '../types';
+import { roomService } from '../services/rooms.service';
+import { doubtService } from '../services/doubts.service';
 import { StatCard } from '../components/dashboard/StatCard';
 import { DailyGoals } from '../components/dashboard/DailyGoals';
 import { RecentRooms } from '../components/dashboard/RecentRooms';
@@ -25,6 +28,13 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [askDoubtOpen, setAskDoubtOpen] = useState(false);
+  const [recentRooms, setRecentRooms] = useState<StudyRoom[]>([]);
+  const [latestDoubts, setLatestDoubts] = useState<Doubt[]>([]);
+
+  useEffect(() => {
+    roomService.getRooms().then(setRecentRooms).catch(() => {});
+    doubtService.getDoubts().then(setLatestDoubts).catch(() => {});
+  }, []);
 
   const currentPoints = user?.points || 1250;
   const targetPoints = 2000;
@@ -36,7 +46,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#151C2F] tracking-tight">
-            Welcome back, {user?.name || 'Alex'}! 👋
+            Welcome back, {user?.name || 'Scholar'}! 👋
           </h1>
           <p className="text-sm text-[#667085] mt-1">
             Your learning velocity is up <strong className="text-[#10B981]">12%</strong> compared to last week. Keep the momentum going!
@@ -159,7 +169,7 @@ export const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            <RecentRooms onJoinRoom={(roomId) => navigate(`/study-rooms/${roomId}`)} />
+            <RecentRooms rooms={recentRooms} onJoinRoom={(roomId) => navigate(`/study-rooms/${roomId}`)} />
           </div>
 
           {/* Latest Academic Doubts */}
@@ -178,7 +188,7 @@ export const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            <LatestDoubts onSelectDoubt={(doubtId) => navigate(`/doubts?id=${doubtId}`)} />
+            <LatestDoubts doubts={latestDoubts} onSelectDoubt={(doubtId) => navigate(`/doubts?id=${doubtId}`)} />
           </div>
         </div>
 

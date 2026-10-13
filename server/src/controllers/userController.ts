@@ -28,12 +28,14 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    if (name) user.name = name;
-    if (bio !== undefined) user.bio = bio;
-    if (year) user.year = year;
-    if (branch) user.branch = branch;
-    if (college) user.college = college;
-    if (avatar) user.avatar = avatar;
+    if (typeof name === 'string' && name.trim()) user.name = name.trim().slice(0, 50);
+    if (typeof bio === 'string') user.bio = bio.trim().slice(0, 300);
+    if (typeof year === 'string') user.year = year.trim().slice(0, 30);
+    if (typeof branch === 'string') user.branch = branch.trim().slice(0, 50);
+    if (typeof college === 'string') user.college = college.trim().slice(0, 100);
+    if (typeof avatar === 'string' && (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image/'))) {
+      user.avatar = avatar;
+    }
 
     await user.save();
     res.json(user);
@@ -50,13 +52,18 @@ export const toggleDailyGoal = async (req: AuthRequest, res: Response): Promise<
     }
 
     const { goalIndex } = req.body;
+    if (typeof goalIndex !== 'number' || !Number.isInteger(goalIndex) || goalIndex < 0) {
+      res.status(400).json({ message: 'Valid goalIndex number is required' });
+      return;
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
 
-    if (user.dailyGoals[goalIndex]) {
+    if (user.dailyGoals && user.dailyGoals[goalIndex]) {
       user.dailyGoals[goalIndex].completed = !user.dailyGoals[goalIndex].completed;
       await user.save();
     }

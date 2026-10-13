@@ -35,7 +35,6 @@ const MOCK_LEADERS: LeaderboardUser[] = [
     streak: 14,
     doubtsSolved: 42,
     tier: 'Master Tier',
-    isCurrentUser: true,
   },
   {
     rank: 3,
@@ -90,7 +89,7 @@ export const Leaderboard: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF2FC] text-[#0057BE] text-xs font-bold mb-2">
             <Trophy className="w-3.5 h-3.5" />
-            <span>HONOR ROLL</span>
+            <span>HONOR ROLL • DEMO SHOWCASE</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#151C2F] tracking-tight">
             Scholars Leaderboard
@@ -216,7 +215,7 @@ export const Leaderboard: React.FC = () => {
       <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xs overflow-hidden">
         <div className="p-5 border-b border-[#E5E7EB] flex items-center justify-between">
           <h3 className="text-base font-extrabold text-[#151C2F]">Rankings Table</h3>
-          <span className="text-xs text-[#667085]">Updated real-time every 15 minutes</span>
+          <span className="text-xs text-[#667085]">Sample community rankings</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -232,11 +231,13 @@ export const Leaderboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
-              {MOCK_LEADERS.map((leader) => (
+              {MOCK_LEADERS.map((leader) => {
+                const isCurrent = user?.name ? leader.name.toLowerCase() === user.name.toLowerCase() : false;
+                return (
                 <tr
                   key={leader.rank}
                   className={`transition-colors ${
-                    leader.isCurrentUser
+                    isCurrent
                       ? 'bg-[#EAF2FC]/60 font-semibold'
                       : 'hover:bg-[#F8F9FB]'
                   }`}
@@ -263,7 +264,7 @@ export const Leaderboard: React.FC = () => {
                       <div>
                         <div className="font-extrabold text-[#151C2F] flex items-center gap-1.5">
                           <span>{leader.name}</span>
-                          {leader.isCurrentUser && (
+                          {isCurrent && (
                             <span className="text-[10px] bg-[#0057BE] text-white px-1.5 py-0.2 rounded font-bold">
                               YOU
                             </span>
@@ -289,7 +290,8 @@ export const Leaderboard: React.FC = () => {
                     {leader.points.toLocaleString()}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

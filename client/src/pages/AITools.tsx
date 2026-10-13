@@ -86,13 +86,13 @@ export const AITools: React.FC = () => {
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF2FC] text-[#0057BE] text-xs font-bold mb-2">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>ACADEMIC INTELLIGENCE ENGINE</span>
+          <span>ACADEMIC INTELLIGENCE ENGINE • DEMO PREVIEW</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#151C2F] tracking-tight">
           AI Study Suite
         </h1>
         <p className="text-sm text-[#667085] mt-1">
-          Next-generation academic intelligence designed to accelerate comprehension and synthesize complex lectures.
+          Interactive demonstration of academic intelligence, lecture synthesis, and flashcard generation.
         </p>
       </div>
 

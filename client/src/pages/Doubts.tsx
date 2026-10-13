@@ -49,20 +49,17 @@ export const Doubts: React.FC = () => {
     try {
       const res = await doubtService.upvoteDoubt(doubtId);
       setDoubts((prev) =>
-        prev.map((d) => (d.id === doubtId ? { ...d, upvotes: res.upvotes } : d))
+        prev.map((d) => ((d._id === doubtId || d.id === doubtId) ? { ...d, upvotes: res.upvotes } : d))
       );
     } catch (err) {
-      // optimistic fallback
-      setDoubts((prev) =>
-        prev.map((d) => (d.id === doubtId ? { ...d, upvotes: d.upvotes + 1 } : d))
-      );
+      console.error('Failed to upvote doubt:', err);
     }
   };
 
   const handleAddAnswer = async (doubtId: string, answerText: string) => {
     try {
       const updated = await doubtService.addAnswer(doubtId, answerText);
-      setDoubts((prev) => prev.map((d) => (d.id === doubtId ? updated : d)));
+      setDoubts((prev) => prev.map((d) => ((d._id === doubtId || d.id === doubtId) ? updated : d)));
     } catch (err) {
       console.error('Failed to post answer:', err);
     }
@@ -217,11 +214,11 @@ export const Doubts: React.FC = () => {
           ) : (
             filteredDoubts.map((doubt) => (
               <DoubtCard
-                key={doubt.id}
+                key={doubt._id || doubt.id}
                 doubt={doubt}
                 onUpvote={handleUpvote}
                 onAddAnswer={handleAddAnswer}
-                isHighlighted={highlightedId === doubt.id}
+                isHighlighted={highlightedId === (doubt._id || doubt.id)}
               />
             ))
           )}

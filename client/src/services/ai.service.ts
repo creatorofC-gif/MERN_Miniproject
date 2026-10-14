@@ -1,7 +1,7 @@
 import { request } from './api';
 
 export const aiService = {
-  summarizeNotes: async (
+  summarize: async (
     text: string,
     subject?: string
   ): Promise<{ summary: string; bulletPoints?: string[]; flashcards: { question: string; answer: string }[] }> => {
@@ -9,13 +9,6 @@ export const aiService = {
       method: 'POST',
       body: JSON.stringify({ text, subject }),
     });
-  },
-
-  summarize: async (
-    text: string,
-    subject?: string
-  ): Promise<{ summary: string; bulletPoints?: string[]; flashcards: { question: string; answer: string }[] }> => {
-    return aiService.summarizeNotes(text, subject);
   },
 
   registerWaitlist: async (email: string): Promise<{ success: boolean; message: string }> => {

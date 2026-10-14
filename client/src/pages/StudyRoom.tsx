@@ -78,8 +78,10 @@ export const StudyRoom: React.FC = () => {
   useEffect(() => {
     if (!id || !room) return;
 
+    const apiUrl = import.meta.env.VITE_API_URL || '';
     const socketUrl =
       import.meta.env.VITE_SOCKET_URL ||
+      (apiUrl ? apiUrl.replace(/\/api\/?$/, '') : '') ||
       (window.location.port === '5173' ? 'http://localhost:5000' : '/');
     const authToken = localStorage.getItem('studysphere_token');
 

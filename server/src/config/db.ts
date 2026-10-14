@@ -29,19 +29,34 @@ export const connectDB = async (): Promise<boolean> => {
   cleanUri = cleanUri.replace(/majority=Cluster0/gi, 'majority&appName=Cluster0');
   cleanUri = cleanUri.replace(/w=majority=[^&]*/gi, 'w=majority');
 
-  // Handle case where database name was placed as query param /?studysphere instead of path /StudySphere?
-  if (cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
+  const isAtlas = cleanUri.includes('mongodb.net') || cleanUri.startsWith('mongodb+srv://');
+
+  // Handle case where database name was placed as query param /?studysphere instead of path on Atlas
+  if (isAtlas && cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
     cleanUri = cleanUri.replace(/\/?\?studysphere(\b|$)/i, '/StudySphere?retryWrites=true&w=majority');
   }
 
-  const isAtlas = cleanUri.includes('mongodb.net') || cleanUri.startsWith('mongodb+srv://');
   try {
     const options: mongoose.ConnectOptions = {
       serverSelectionTimeoutMS: 10000,
       autoIndex: true,
-      dbName: 'StudySphere',
-      w: 'majority',
     };
+
+    if (isAtlas) {
+      options.retryWrites = true;
+      options.w = 'majority';
+      // If no database name was provided in the Atlas URI path, default to StudySphere
+      const uriPathMatch = cleanUri.match(/mongodb(?:\+srv)?:\/\/[^\/]+\/([^?]+)/);
+      if (!uriPathMatch || !uriPathMatch[1]) {
+        options.dbName = 'StudySphere';
+      }
+    } else {
+      // Local MongoDB: default to studysphere only if no database was specified in URI
+      const localPathMatch = cleanUri.match(/mongodb:\/\/[^\/]+\/([^?]+)/);
+      if (!localPathMatch || !localPathMatch[1]) {
+        options.dbName = 'studysphere';
+      }
+    }
 
     const conn = await mongoose.connect(cleanUri, options);
 

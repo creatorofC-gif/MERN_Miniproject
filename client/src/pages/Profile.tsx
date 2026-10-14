@@ -9,12 +9,14 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { usersService } from '../services/users.service';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 
 export const Profile: React.FC = () => {
   const { user, setUser } = useAuth();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [college, setCollege] = useState(user?.college || '');
@@ -45,8 +47,10 @@ export const Profile: React.FC = () => {
       if (updatedUser && setUser) {
         setUser(updatedUser);
       }
+      toast.success('Your profile changes have been saved to Atlas Cloud.', 'Profile Updated');
     } catch (err) {
       console.warn('Backend profile update sync:', err);
+      toast.info('Profile saved locally.', 'Profile Updated');
     } finally {
       setSaving(false);
       setIsEditing(false);

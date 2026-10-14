@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Doubt, TopSolver } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { doubtService } from '../services/doubts.service';
 import { usersService } from '../services/users.service';
 import { DoubtCard } from '../components/doubts/DoubtCard';
@@ -22,6 +23,7 @@ const FILTER_PILLS = ['All Doubts', 'High Reward', 'Needs Review', 'Unanswered']
 
 export const Doubts: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
 
@@ -269,6 +271,7 @@ export const Doubts: React.FC = () => {
         onClose={() => setAskModalOpen(false)}
         onCreated={(newDoubt) => {
           setDoubts((prev) => [newDoubt, ...prev]);
+          toast.success('Your doubt has been published to the campus board.', 'Doubt Posted');
         }}
       />
     </div>

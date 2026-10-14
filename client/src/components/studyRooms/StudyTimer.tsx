@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, SkipForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useToast } from '../../context/ToastContext';
 
 export interface StudyTimerProps {
   onTimerSync?: (action: string, time: number, isRunning: boolean) => void;
@@ -9,6 +10,7 @@ export interface StudyTimerProps {
 }
 
 export const StudyTimer: React.FC<StudyTimerProps> = ({ onTimerSync, onTimerAction, externalSync }) => {
+  const { toast } = useToast();
   const [mode, setMode] = useState<'focus' | 'short_break' | 'long_break'>('focus');
   const [secondsLeft, setSecondsLeft] = useState<number>(25 * 60);
   const [isRunning, setIsRunning] = useState<boolean>(true);
@@ -45,9 +47,14 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onTimerSync, onTimerActi
     } else if (secondsLeft === 0 && isRunning) {
       setIsRunning(false);
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      if (mode === 'focus') {
+        toast.success('Focus session completed! Time to take a well-deserved break.', 'Pomodoro Completed 🎯');
+      } else {
+        toast.info('Break time has ended! Ready to start your next focus session?', 'Break Ended ☕');
+      }
     }
     return () => clearInterval(interval);
-  }, [isRunning, secondsLeft]);
+  }, [isRunning, secondsLeft, mode, toast]);
 
   const toggleTimer = () => {
     const nextState = !isRunning;

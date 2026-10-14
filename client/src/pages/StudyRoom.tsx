@@ -8,6 +8,8 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import confetti from 'canvas-confetti';
 import { StudyRoom as StudyRoomType, ChatMessage, Participant } from '../types';
 import { roomService } from '../services/rooms.service';
 import { StudyTimer } from '../components/studyRooms/StudyTimer';
@@ -19,7 +21,8 @@ import { Button } from '../components/ui/Button';
 export const StudyRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, awardPoints } = useAuth();
+  const { toast } = useToast();
 
   const [room, setRoom] = useState<StudyRoomType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -92,6 +95,7 @@ export const StudyRoom: React.FC = () => {
         roomId: id,
         userName: user?.name || 'Student',
         userAvatar: user?.avatar || '',
+        userId: user?.id || (user as any)?._id,
       });
     });
 
@@ -147,11 +151,11 @@ export const StudyRoom: React.FC = () => {
       );
     });
 
-    // Listen to real-time doubt resolution from peers in this room
-    socket.on('room_doubt_resolved', ({ doubtId }: { doubtId: string }) => {
+    // Listen to real-time doubt resolution from peers in this room and award points to solver
+    socket.on('room_doubt_resolved', (payload: { doubtId: string; resolvedBy?: string; awardedSolvers?: any[]; pointsAwarded?: number; message?: string }) => {
       setMessages((prev) =>
         prev.map((msg) => {
-          if (msg._id === doubtId || (msg as any).doubtId === doubtId) {
+          if (msg._id === payload.doubtId || (msg as any).doubtId === payload.doubtId) {
             return {
               ...msg,
               isResolved: true,
@@ -160,6 +164,29 @@ export const StudyRoom: React.FC = () => {
           return msg;
         })
       );
+
+      // Check if current user is one of the solvers who answered the doubt
+      const myId = user?.id || (user as any)?._id;
+      const isMySolution = payload.awardedSolvers?.some(
+        (s) =>
+          (s.id && myId && s.id === myId) ||
+          (s.name && user?.name && s.name.toLowerCase() === user.name.toLowerCase())
+      );
+
+      if (isMySolution) {
+        const pts = payload.pointsAwarded || 50;
+        awardPoints(pts);
+        toast.success(`🎉 Doubt marked resolved! You earned +${pts} mastery points!`, 'Mastery Points Awarded');
+        confetti({ particleCount: 75, spread: 70, origin: { y: 0.65 } });
+      } else if (payload.message) {
+        toast.info(payload.message, 'Doubt Resolved');
+      }
+    });
+
+    // Listen to direct points awarded event
+    socket.on('points_awarded', (data: { points: number; newPoints?: number; reason: string }) => {
+      awardPoints(data.points);
+      toast.success(`+${data.points} points: ${data.reason}`, 'Points Increased');
     });
 
     return () => {
@@ -170,6 +197,7 @@ export const StudyRoom: React.FC = () => {
       socket.off('doubt_alert_popup');
       socket.off('room_doubt_replied');
       socket.off('room_doubt_resolved');
+      socket.off('points_awarded');
       socket.disconnect();
     };
   }, [id, room, user]);
@@ -198,6 +226,7 @@ export const StudyRoom: React.FC = () => {
       senderName: user?.name || 'Student',
       title: doubtTitle,
     });
+    toast.info('Live doubt broadcasted to all participants in this study room.', 'Doubt Raised');
   };
 
   // Reply to Room Doubt via Socket
@@ -208,6 +237,7 @@ export const StudyRoom: React.FC = () => {
       doubtId,
       text,
     });
+    toast.success('Your answer has been submitted to the room doubt thread!', 'Answer Submitted');
   };
 
   // Mark Room Doubt Resolved via Socket
@@ -217,6 +247,7 @@ export const StudyRoom: React.FC = () => {
       roomId: id,
       doubtId,
     });
+    toast.info('Resolving doubt and awarding mastery points to solver...', 'Doubt Resolution');
   };
 
   // Sync Timer with Peers
@@ -297,7 +328,7 @@ export const StudyRoom: React.FC = () => {
           <button
             onClick={() => {
               navigator.clipboard?.writeText(window.location.href);
-              alert('Room link copied to clipboard!');
+              toast.success('Room invite link copied to clipboard! Share it with your peers to study together.', 'Invite Link Copied');
             }}
             className="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >

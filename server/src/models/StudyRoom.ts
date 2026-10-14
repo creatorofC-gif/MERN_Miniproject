@@ -10,6 +10,7 @@ export interface IRoomMember {
 
 export interface IRoomDoubtReply {
   _id?: string;
+  senderId?: string;
   senderName: string;
   senderAvatar?: string;
   text: string;
@@ -95,6 +96,7 @@ const StudyRoomSchema = new Schema<IStudyRoom>(
         type: { type: String, enum: ['message', 'doubt_alert', 'system'], default: 'message' },
         doubtReplies: [
           {
+            senderId: { type: String },
             senderName: { type: String, required: true },
             senderAvatar: { type: String, default: '' },
             text: { type: String, required: true },

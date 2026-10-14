@@ -50,7 +50,7 @@ export const setupRoomSocket = (io: Server): void => {
     console.log(`[WebSocket] Connected: ${socket.id}`);
 
     // Join Study Room
-    socket.on('join_room', async (data: { roomId?: string; userName?: string; userAvatar?: string }) => {
+    socket.on('join_room', async (data: { roomId?: string; userName?: string; userAvatar?: string; userId?: string }) => {
       const roomId = typeof data?.roomId === 'string' ? data.roomId.trim() : '';
       if (!roomId || roomId.length > 100) return;
 
@@ -58,7 +58,9 @@ export const setupRoomSocket = (io: Server): void => {
 
       let userName = 'Student';
       let userAvatar = '';
-      const authUserId = socket.data.user?.id;
+      let authUserId =
+        socket.data.user?.id ||
+        (typeof data?.userId === 'string' && data.userId.match(/^[0-9a-fA-F]{24}$/) ? data.userId : undefined);
 
       if (authUserId) {
         try {
@@ -196,6 +198,7 @@ export const setupRoomSocket = (io: Server): void => {
 
       const reply = {
         _id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        senderId: user?.userId || '',
         senderName: user?.userName || 'Student',
         senderAvatar: user?.userAvatar || '',
         text,
@@ -215,23 +218,117 @@ export const setupRoomSocket = (io: Server): void => {
       }
     });
 
-    // Mark a Room Doubt as Resolved
-    socket.on('resolve_room_doubt', (data: { roomId?: string; doubtId?: string }) => {
+    // Mark a Room Doubt as Resolved and Award Points to Solvers
+    socket.on('resolve_room_doubt', async (data: { roomId?: string; doubtId?: string }) => {
       const user = activeUsers.get(socket.id);
       const roomId = typeof data?.roomId === 'string' ? data.roomId.trim() : user?.roomId || '';
       const doubtId = typeof data?.doubtId === 'string' ? data.doubtId.trim() : '';
       if (!roomId || !doubtId) return;
 
+      const pointsPerSolver = 50;
+      const awardedSolvers: { id?: string; name: string; newPoints?: number }[] = [];
+
+      if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
+        try {
+          const room = await StudyRoom.findById(roomId);
+          if (room) {
+            const targetMsg = room.messages.find(
+              (m) => m._id?.toString() === doubtId || (m as any).id === doubtId
+            );
+
+            if (targetMsg) {
+              if (targetMsg.isResolved) {
+                // Already resolved, emit without duplicate points awarding
+                io.to(roomId).emit('room_doubt_resolved', {
+                  doubtId,
+                  resolvedBy: user?.userName || 'Student',
+                  awardedSolvers: [],
+                  pointsAwarded: 0,
+                });
+                return;
+              }
+
+              targetMsg.isResolved = true;
+
+              // Find all students who replied/answered this doubt
+              const replies = targetMsg.doubtReplies || [];
+              const solverUserIds = new Set<string>();
+              const solverNames = new Set<string>();
+
+              replies.forEach((r) => {
+                if (r.senderId && r.senderId.match(/^[0-9a-fA-F]{24}$/)) {
+                  solverUserIds.add(r.senderId);
+                } else if (r.senderName) {
+                  solverNames.add(r.senderName.trim());
+                }
+              });
+
+              // Award points in MongoDB Atlas to every solver who answered
+              if (solverUserIds.size > 0 || solverNames.size > 0) {
+                const queryConditions: any[] = [];
+                if (solverUserIds.size > 0) {
+                  queryConditions.push({ _id: { $in: Array.from(solverUserIds) } });
+                }
+                if (solverNames.size > 0) {
+                  queryConditions.push({ name: { $in: Array.from(solverNames) } });
+                }
+
+                const dbSolvers = await User.find({ $or: queryConditions });
+                for (const solver of dbSolvers) {
+                  solver.points = (solver.points || 0) + pointsPerSolver;
+                  if (solver.points >= 1000) solver.tier = 'Master Tier';
+                  else if (solver.points >= 500) solver.tier = 'Senior Scholar';
+                  else if (solver.points >= 200) solver.tier = 'Scholar Tier';
+                  await solver.save();
+
+                  awardedSolvers.push({
+                    id: solver._id.toString(),
+                    name: solver.name,
+                    newPoints: solver.points,
+                  });
+                }
+              }
+
+              await room.save();
+            }
+          }
+        } catch (err) {
+          console.error('[WebSocket] Error awarding room doubt points:', err);
+        }
+      }
+
+      // Fallback for non-ObjectId or in-memory rooms
+      if (awardedSolvers.length === 0 && user?.userName) {
+        awardedSolvers.push({ name: user.userName, newPoints: 50 });
+      }
+
+      // Broadcast resolution and solver awards to the entire room
       io.to(roomId).emit('room_doubt_resolved', {
         doubtId,
         resolvedBy: user?.userName || 'Student',
+        awardedSolvers,
+        pointsAwarded: pointsPerSolver,
+        message:
+          awardedSolvers.length > 0
+            ? `Doubt resolved! +${pointsPerSolver} mastery points awarded to ${awardedSolvers.map((s) => s.name).join(', ')}.`
+            : 'Doubt marked as resolved.',
       });
 
-      if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
-        StudyRoom.updateOne(
-          { _id: roomId, 'messages._id': doubtId },
-          { $set: { 'messages.$.isResolved': true } }
-        ).catch(() => {});
+      // Send dedicated points_awarded event to connected solver sockets
+      for (const [sockId, roomUser] of activeUsers.entries()) {
+        const matchingAward = awardedSolvers.find(
+          (s) =>
+            (s.id && roomUser.userId && s.id === roomUser.userId) ||
+            s.name.toLowerCase() === roomUser.userName.toLowerCase()
+        );
+        if (matchingAward) {
+          io.to(sockId).emit('points_awarded', {
+            points: pointsPerSolver,
+            newPoints: matchingAward.newPoints,
+            reason: 'Doubt answer accepted in study room',
+            doubtId,
+          });
+        }
       }
     });
 

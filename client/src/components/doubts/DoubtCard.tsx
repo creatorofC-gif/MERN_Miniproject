@@ -16,6 +16,7 @@ import { Button } from '../ui/Button';
 import { Doubt, Answer } from '../../types';
 import { doubtsService } from '../../services/doubts.service';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import confetti from 'canvas-confetti';
 
 export interface DoubtCardProps {
@@ -34,6 +35,7 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
   isHighlighted,
 }) => {
   const { user, awardPoints } = useAuth();
+  const { toast } = useToast();
 
   const [answers, setAnswers] = useState<Answer[]>(doubt.answers || []);
   const [status, setStatus] = useState<'open' | 'claimed' | 'solved'>(doubt.status || 'open');
@@ -111,12 +113,13 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
     // 4. Update global mastery points in AuthContext
     awardPoints(pointsEarned);
 
-    // 5. Fire celebratory confetti
+    // 5. Fire celebratory confetti & show toast
     confetti({
       particleCount: 75,
       spread: 70,
       origin: { y: 0.65 },
     });
+    toast.success(`Solution accepted! +${pointsEarned} mastery points awarded.`, 'Bounty Claimed 🎉');
 
     // 6. Reset form and ensure thread is expanded
     setAnswerContent('');

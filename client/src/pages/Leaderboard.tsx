@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Crown, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Trophy, Flame, Crown, Sparkles, RefreshCw, Medal } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usersService } from '../services/users.service';
 import { Avatar } from '../components/ui/Avatar';
@@ -21,15 +21,18 @@ export const Leaderboard: React.FC = () => {
   const [scope, setScope] = useState<'weekly' | 'allTime' | 'college'>('weekly');
   const [leaders, setLeaders] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
+  const fetchLeaderboard = (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
 
     usersService
       .getLeaderboard()
       .then((data) => {
-        if (!isMounted) return;
         if (Array.isArray(data) && data.length > 0) {
           const mapped: LeaderboardUser[] = data.map((u: any, idx: number) => ({
             rank: idx + 1,
@@ -44,7 +47,7 @@ export const Leaderboard: React.FC = () => {
           }));
           setLeaders(mapped);
         } else if (user) {
-          // If only the current user exists in the system
+          // If only the current user exists in the database
           setLeaders([
             {
               rank: 1,
@@ -64,7 +67,7 @@ export const Leaderboard: React.FC = () => {
       })
       .catch((err) => {
         console.error('Failed to fetch leaderboard:', err);
-        if (user && isMounted) {
+        if (user && leaders.length === 0) {
           setLeaders([
             {
               rank: 1,
@@ -81,20 +84,34 @@ export const Leaderboard: React.FC = () => {
         }
       })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        setLoading(false);
+        setIsRefreshing(false);
       });
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    fetchLeaderboard(false);
   }, [user]);
 
-  const first = leaders[0];
-  const second = leaders[1];
-  const third = leaders[2];
+  // Scope Filtering & Sorting
+  const filteredLeaders = useMemo(() => {
+    if (scope === 'college' && user?.college) {
+      const userCol = user.college.toLowerCase().trim();
+      const campusList = leaders.filter((l) => l.college.toLowerCase().includes(userCol));
+      return campusList.length > 0 ? campusList : leaders;
+    }
+    return leaders;
+  }, [leaders, scope, user]);
+
+  const first = filteredLeaders[0];
+  const second = filteredLeaders[1];
+  const third = filteredLeaders[2];
+
+  // Current user's standing
+  const currentUserRank = filteredLeaders.find((l) => l.isCurrentUser);
 
   return (
-    <div className="space-y-8 font-sans max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 font-sans max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -110,165 +127,287 @@ export const Leaderboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Scope Tabs */}
-        <div className="bg-[#F8F9FB] border border-[#E5E7EB] p-1 rounded-xl flex items-center self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {/* Silent Refresh Button */}
           <button
-            onClick={() => setScope('weekly')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              scope === 'weekly'
-                ? 'bg-white text-[#151C2F] shadow-xs'
-                : 'text-[#667085] hover:text-[#151C2F]'
-            }`}
+            onClick={() => fetchLeaderboard(true)}
+            disabled={loading || isRefreshing}
+            className="p-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#667085] hover:text-[#151C2F] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            title="Refresh Leaderboard"
           >
-            Weekly
+            <RefreshCw className={`w-4 h-4 ${isRefreshing || loading ? 'animate-spin text-[#0057BE]' : ''}`} />
           </button>
-          <button
-            onClick={() => setScope('allTime')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              scope === 'allTime'
-                ? 'bg-white text-[#151C2F] shadow-xs'
-                : 'text-[#667085] hover:text-[#151C2F]'
-            }`}
-          >
-            All-Time
-          </button>
-          <button
-            onClick={() => setScope('college')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              scope === 'college'
-                ? 'bg-white text-[#151C2F] shadow-xs'
-                : 'text-[#667085] hover:text-[#151C2F]'
-            }`}
-          >
-            My Campus
-          </button>
+
+          {/* Scope Tabs */}
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] p-1 rounded-xl flex items-center">
+            <button
+              onClick={() => setScope('weekly')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                scope === 'weekly'
+                  ? 'bg-white text-[#151C2F] shadow-xs'
+                  : 'text-[#667085] hover:text-[#151C2F]'
+              }`}
+            >
+              Weekly
+            </button>
+            <button
+              onClick={() => setScope('allTime')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                scope === 'allTime'
+                  ? 'bg-white text-[#151C2F] shadow-xs'
+                  : 'text-[#667085] hover:text-[#151C2F]'
+              }`}
+            >
+              All-Time
+            </button>
+            <button
+              onClick={() => setScope('college')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                scope === 'college'
+                  ? 'bg-white text-[#151C2F] shadow-xs'
+                  : 'text-[#667085] hover:text-[#151C2F]'
+              }`}
+            >
+              My Campus
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Top 3 Podium Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-        {/* Rank 2 (Silver) */}
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3 shadow-xs relative order-2 md:order-1">
-          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-extrabold text-sm flex items-center justify-center mx-auto border border-gray-300">
-            #2
-          </div>
-          {second ? (
-            <>
-              <Avatar
-                src={second.avatar}
-                name={second.name}
-                size="lg"
-                className="mx-auto"
-                ring="amber"
-              />
-              <div>
-                <h4 className="text-sm font-extrabold text-[#151C2F]">{second.name}</h4>
-                <p className="text-xs text-[#667085]">{second.college}</p>
-              </div>
-              <div className="pt-2 border-t border-[#E5E7EB] flex items-center justify-center gap-4 text-xs font-bold">
-                <span className="text-[#0057BE]">{second.points.toLocaleString()} pts</span>
-                <span className="text-[#D97706] flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5" />
-                  {second.streak}d
+      {/* User Position Spotlight if Ranked */}
+      {currentUserRank && (
+        <div className="bg-gradient-to-r from-[#0057BE] to-[#1E40AF] text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center font-extrabold text-base border border-white/20">
+              #{currentUserRank.rank}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-white text-sm sm:text-base">Your Honor Roll Rank</span>
+                <span className="text-[10px] bg-white/20 font-bold px-2 py-0.5 rounded-full uppercase">
+                  {currentUserRank.tier}
                 </span>
               </div>
-            </>
-          ) : (
-            <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
-              <div className="w-11 h-11 rounded-full bg-gray-100 mx-auto flex items-center justify-center font-bold text-gray-400">
-                -
-              </div>
-              <p className="font-semibold text-gray-500">Awaiting Scholar</p>
-              <p className="text-[11px]">Rank #2 is open to claim</p>
+              <p className="text-xs text-blue-100">
+                You currently hold #{currentUserRank.rank} with {currentUserRank.points.toLocaleString()} points.
+              </p>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Rank 1 (Gold) */}
-        <div className="bg-gradient-to-b from-[#FFFBEB] to-white rounded-2xl border-2 border-[#F59E0B] p-7 text-center space-y-3.5 shadow-md relative order-1 md:order-2">
-          <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-white font-black text-sm flex items-center justify-center mx-auto shadow-md shadow-amber-400/30">
-            <Crown className="w-5 h-5" />
+          <div className="flex items-center gap-4 text-xs font-bold self-end sm:self-auto">
+            <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-amber-300" />
+              <span>{currentUserRank.streak}d Streak</span>
+            </span>
+            <span className="bg-white text-[#0057BE] px-3.5 py-1.5 rounded-lg shadow-xs font-extrabold">
+              {currentUserRank.points.toLocaleString()} pts
+            </span>
           </div>
-          {first ? (
-            <>
-              <Avatar
-                src={first.avatar}
-                name={first.name}
-                size="xl"
-                className="mx-auto"
-                ring="amber"
-              />
-              <div>
-                <h4 className="text-base font-extrabold text-[#151C2F]">{first.name}</h4>
-                <p className="text-xs text-[#667085]">{first.college}</p>
-              </div>
-              <div className="pt-2 border-t border-[#FDE68A] flex items-center justify-center gap-4 text-xs font-extrabold">
-                <span className="text-[#0057BE] text-sm">{first.points.toLocaleString()} pts</span>
-                <span className="text-[#D97706] flex items-center gap-1">
-                  <Flame className="w-4 h-4" />
-                  {first.streak}d streak
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
-              <div className="w-14 h-14 rounded-full bg-amber-50 mx-auto flex items-center justify-center font-bold text-amber-600">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <p className="font-semibold text-gray-700">Rank #1 Open</p>
-              <p className="text-[11px]">Solve doubts to take the top spot</p>
-            </div>
-          )}
         </div>
+      )}
 
-        {/* Rank 3 (Bronze) */}
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3 shadow-xs relative order-3">
-          <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-800 font-extrabold text-sm flex items-center justify-center mx-auto border border-amber-200">
-            #3
+      {/* Loading Skeleton vs Rendered Podium Row */}
+      {loading && leaders.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+          {/* Silver Skeleton */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3.5 shadow-xs relative order-2 md:order-1 animate-pulse">
+            <div className="w-8 h-8 rounded-full bg-gray-200 mx-auto" />
+            <div className="w-16 h-16 rounded-full bg-gray-200 mx-auto" />
+            <div className="h-4 w-24 bg-gray-200 mx-auto rounded" />
+            <div className="h-3 w-32 bg-gray-100 mx-auto rounded" />
+            <div className="pt-2 border-t border-gray-100 h-6 w-28 bg-gray-100 mx-auto rounded" />
           </div>
-          {third ? (
-            <>
-              <Avatar
-                src={third.avatar}
-                name={third.name}
-                size="lg"
-                className="mx-auto"
-              />
-              <div>
-                <h4 className="text-sm font-extrabold text-[#151C2F]">{third.name}</h4>
-                <p className="text-xs text-[#667085]">{third.college}</p>
-              </div>
-              <div className="pt-2 border-t border-[#E5E7EB] flex items-center justify-center gap-4 text-xs font-bold">
-                <span className="text-[#0057BE]">{third.points.toLocaleString()} pts</span>
-                <span className="text-[#D97706] flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5" />
-                  {third.streak}d
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
-              <div className="w-11 h-11 rounded-full bg-gray-100 mx-auto flex items-center justify-center font-bold text-gray-400">
-                -
-              </div>
-              <p className="font-semibold text-gray-500">Awaiting Scholar</p>
-              <p className="text-[11px]">Rank #3 is open to claim</p>
-            </div>
-          )}
+
+          {/* Gold Skeleton */}
+          <div className="bg-white rounded-2xl border-2 border-amber-300 p-7 text-center space-y-4 shadow-sm relative order-1 md:order-2 animate-pulse">
+            <div className="w-9 h-9 rounded-full bg-amber-200 mx-auto" />
+            <div className="w-20 h-20 rounded-full bg-amber-100 mx-auto" />
+            <div className="h-5 w-32 bg-gray-200 mx-auto rounded" />
+            <div className="h-3 w-40 bg-gray-100 mx-auto rounded" />
+            <div className="pt-2 border-t border-gray-100 h-6 w-36 bg-gray-100 mx-auto rounded" />
+          </div>
+
+          {/* Bronze Skeleton */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3.5 shadow-xs relative order-3 animate-pulse">
+            <div className="w-8 h-8 rounded-full bg-gray-200 mx-auto" />
+            <div className="w-16 h-16 rounded-full bg-gray-200 mx-auto" />
+            <div className="h-4 w-24 bg-gray-200 mx-auto rounded" />
+            <div className="h-3 w-32 bg-gray-100 mx-auto rounded" />
+            <div className="pt-2 border-t border-gray-100 h-6 w-28 bg-gray-100 mx-auto rounded" />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end transition-all duration-300">
+          {/* Rank 2 (Silver) */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3 shadow-xs relative order-2 md:order-1 transition-all duration-300 hover:shadow-md">
+            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-extrabold text-sm flex items-center justify-center mx-auto border border-gray-300">
+              #2
+            </div>
+            {second ? (
+              <>
+                <Avatar
+                  src={second.avatar}
+                  name={second.name}
+                  size="lg"
+                  className="mx-auto"
+                  ring="amber"
+                />
+                <div>
+                  <h4 className="text-sm font-extrabold text-[#151C2F] flex items-center justify-center gap-1.5">
+                    <span>{second.name}</span>
+                    {second.isCurrentUser && (
+                      <span className="text-[10px] bg-[#0057BE] text-white px-1.5 py-0.2 rounded font-bold">
+                        YOU
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-xs text-[#667085]">{second.college}</p>
+                </div>
+                <div className="pt-2 border-t border-[#E5E7EB] flex items-center justify-center gap-4 text-xs font-bold">
+                  <span className="text-[#0057BE]">{second.points.toLocaleString()} pts</span>
+                  <span className="text-[#D97706] flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5" />
+                    {second.streak}d
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
+                <div className="w-11 h-11 rounded-full bg-gray-100 mx-auto flex items-center justify-center font-bold text-gray-400">
+                  <Medal className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="font-semibold text-gray-500">Awaiting Scholar</p>
+                <p className="text-[11px]">Rank #2 is open to claim</p>
+              </div>
+            )}
+          </div>
+
+          {/* Rank 1 (Gold) */}
+          <div className="bg-gradient-to-b from-[#FFFBEB] to-white rounded-2xl border-2 border-[#F59E0B] p-7 text-center space-y-3.5 shadow-md relative order-1 md:order-2 transition-all duration-300 hover:shadow-lg">
+            <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-white font-black text-sm flex items-center justify-center mx-auto shadow-md shadow-amber-400/30">
+              <Crown className="w-5 h-5" />
+            </div>
+            {first ? (
+              <>
+                <Avatar
+                  src={first.avatar}
+                  name={first.name}
+                  size="xl"
+                  className="mx-auto"
+                  ring="amber"
+                />
+                <div>
+                  <h4 className="text-base font-extrabold text-[#151C2F] flex items-center justify-center gap-1.5">
+                    <span>{first.name}</span>
+                    {first.isCurrentUser && (
+                      <span className="text-[10px] bg-[#0057BE] text-white px-1.5 py-0.2 rounded font-bold">
+                        YOU
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-xs text-[#667085]">{first.college}</p>
+                </div>
+                <div className="pt-2 border-t border-[#FDE68A] flex items-center justify-center gap-4 text-xs font-extrabold">
+                  <span className="text-[#0057BE] text-sm">{first.points.toLocaleString()} pts</span>
+                  <span className="text-[#D97706] flex items-center gap-1">
+                    <Flame className="w-4 h-4" />
+                    {first.streak}d streak
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
+                <div className="w-14 h-14 rounded-full bg-amber-50 mx-auto flex items-center justify-center font-bold text-amber-600">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <p className="font-semibold text-gray-700">Rank #1 Open</p>
+                <p className="text-[11px]">Solve doubts to take the top spot</p>
+              </div>
+            )}
+          </div>
+
+          {/* Rank 3 (Bronze) */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 text-center space-y-3 shadow-xs relative order-3 transition-all duration-300 hover:shadow-md">
+            <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-800 font-extrabold text-sm flex items-center justify-center mx-auto border border-amber-200">
+              #3
+            </div>
+            {third ? (
+              <>
+                <Avatar
+                  src={third.avatar}
+                  name={third.name}
+                  size="lg"
+                  className="mx-auto"
+                />
+                <div>
+                  <h4 className="text-sm font-extrabold text-[#151C2F] flex items-center justify-center gap-1.5">
+                    <span>{third.name}</span>
+                    {third.isCurrentUser && (
+                      <span className="text-[10px] bg-[#0057BE] text-white px-1.5 py-0.2 rounded font-bold">
+                        YOU
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-xs text-[#667085]">{third.college}</p>
+                </div>
+                <div className="pt-2 border-t border-[#E5E7EB] flex items-center justify-center gap-4 text-xs font-bold">
+                  <span className="text-[#0057BE]">{third.points.toLocaleString()} pts</span>
+                  <span className="text-[#D97706] flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5" />
+                    {third.streak}d
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="py-4 space-y-1 text-xs text-[#98A2B3]">
+                <div className="w-11 h-11 rounded-full bg-gray-100 mx-auto flex items-center justify-center font-bold text-gray-400">
+                  <Medal className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="font-semibold text-gray-500">Awaiting Scholar</p>
+                <p className="text-[11px]">Rank #3 is open to claim</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Full Leaderboard Table */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xs overflow-hidden transition-all duration-300">
         <div className="p-5 border-b border-[#E5E7EB] flex items-center justify-between">
-          <h3 className="text-base font-extrabold text-[#151C2F]">Rankings Table</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-extrabold text-[#151C2F]">Rankings Table</h3>
+            {isRefreshing && (
+              <span className="text-[11px] text-[#0057BE] font-semibold flex items-center gap-1">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                <span>Syncing Atlas...</span>
+              </span>
+            )}
+          </div>
           <span className="text-xs text-[#667085]">
-            {loading ? 'Updating live stats...' : `${leaders.length} Scholar${leaders.length === 1 ? '' : 's'} ranked`}
+            {loading && leaders.length === 0
+              ? 'Loading scholars...'
+              : `${filteredLeaders.length} Scholar${filteredLeaders.length === 1 ? '' : 's'} ranked`}
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          {leaders.length === 0 ? (
+          {loading && leaders.length === 0 ? (
+            <div className="p-6 space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-gray-200" />
+                    <div className="w-8 h-8 rounded-full bg-gray-200" />
+                    <div className="space-y-1">
+                      <div className="h-3 w-28 bg-gray-200 rounded" />
+                      <div className="h-2.5 w-16 bg-gray-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-16 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : filteredLeaders.length === 0 ? (
             <div className="py-12 text-center text-xs text-[#98A2B3] space-y-2">
               <Trophy className="w-8 h-8 text-gray-300 mx-auto" />
               <p className="font-semibold text-gray-600">No scholars ranked on the leaderboard yet.</p>
@@ -287,13 +426,13 @@ export const Leaderboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
-                {leaders.map((leader) => {
+                {filteredLeaders.map((leader) => {
                   return (
                     <tr
                       key={leader.rank}
                       className={`transition-colors ${
                         leader.isCurrentUser
-                          ? 'bg-[#EAF2FC]/60 font-semibold'
+                          ? 'bg-[#EAF2FC]/70 font-semibold border-l-4 border-l-[#0057BE]'
                           : 'hover:bg-[#F8F9FB]'
                       }`}
                     >

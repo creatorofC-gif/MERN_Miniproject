@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Trophy, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -14,6 +15,7 @@ export const Login: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { user, login } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || '/dashboard';
@@ -162,7 +164,11 @@ export const Login: React.FC = () => {
                   href="#forgot"
                   onClick={(e) => {
                     e.preventDefault();
-                    alert('Password reset link sent to ' + email);
+                    if (!email.trim()) {
+                      toast.warning('Please enter your university email first.', 'Email Required');
+                    } else {
+                      toast.info(`Password reset link sent to ${email}`, 'Reset Link Sent');
+                    }
                   }}
                   className="font-semibold text-[#0057BE] hover:underline"
                 >

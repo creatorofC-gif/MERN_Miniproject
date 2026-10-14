@@ -1,6 +1,7 @@
 import React from 'react';
 import { Video, Coffee, UserPlus } from 'lucide-react';
 import { Participant } from '../../types';
+import { useToast } from '../../context/ToastContext';
 
 export interface ParticipantListProps {
   participants?: Participant[];
@@ -13,6 +14,17 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   currentUserId,
   onInviteBuddy,
 }) => {
+  const { toast } = useToast();
+
+  const handleCopyInvite = () => {
+    if (onInviteBuddy) {
+      onInviteBuddy();
+    } else {
+      navigator.clipboard?.writeText(window.location.href);
+      toast.success('Room invite link copied to clipboard! Share it with your peers to study together.', 'Invite Link Copied');
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-bold text-gray-200">
@@ -24,10 +36,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
         <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[#1E293B]/60 border border-[#374151]/50 text-gray-400 text-xs">
           <span>No other study buddies in this room yet. Share the invite link to study together!</span>
           <button
-            onClick={onInviteBuddy || (() => {
-              navigator.clipboard?.writeText(window.location.href);
-              alert('Room link copied to clipboard!');
-            })}
+            onClick={handleCopyInvite}
             className="px-3 py-1.5 rounded-lg border border-dashed border-[#4B5563] hover:border-gray-300 text-gray-300 hover:text-white flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ml-3"
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -94,10 +103,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
 
         {/* Invite Buddy Card */}
         <button
-          onClick={onInviteBuddy || (() => {
-            navigator.clipboard?.writeText(window.location.href);
-            alert('Room link copied to clipboard!');
-          })}
+          onClick={handleCopyInvite}
           className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-[#374151] hover:border-gray-400 bg-transparent flex flex-col items-center justify-center text-gray-400 hover:text-white transition-all shrink-0 cursor-pointer"
         >
           <UserPlus className="w-5 h-5 mb-1" />

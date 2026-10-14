@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Check, Sparkles, Zap, Shield, HelpCircle, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useToast } from '../context/ToastContext';
 
 export const Pricing: React.FC = () => {
+  const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const proPrice = billingCycle === 'yearly' ? '$9.60' : '$12';
@@ -150,7 +152,7 @@ export const Pricing: React.FC = () => {
             size="lg"
             fullWidth
             className="mt-8 rounded-xl font-extrabold text-xs bg-[#0057BE] hover:bg-[#00479E] text-white shadow-md shadow-blue-600/30"
-            onClick={() => alert('Pro upgrade initiated! Thank you for supporting StudySphere.')}
+            onClick={() => toast.success('Pro upgrade initiated! Welcome to Pro Scholar.', 'Upgrade Initiated')}
           >
             Upgrade to Pro Scholar
           </Button>
@@ -197,7 +199,7 @@ export const Pricing: React.FC = () => {
             size="lg"
             fullWidth
             className="mt-8 rounded-xl font-bold text-xs"
-            onClick={() => alert('Contacting campus coordinator...')}
+            onClick={() => toast.info('Campus coordinator has been notified. We will reach out shortly.', 'Campus Team Contacted')}
           >
             Contact Campus Team
           </Button>

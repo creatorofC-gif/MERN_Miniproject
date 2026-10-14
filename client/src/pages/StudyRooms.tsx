@@ -6,6 +6,7 @@ import { roomService } from '../services/rooms.service';
 import { StudyRoomCard } from '../components/studyRooms/StudyRoomCard';
 import { CreateRoomModal } from '../components/studyRooms/CreateRoomModal';
 import { Button } from '../components/ui/Button';
+import { useToast } from '../context/ToastContext';
 
 const SUBJECT_PILLS = [
   'All Subjects',
@@ -18,6 +19,7 @@ const SUBJECT_PILLS = [
 
 export const StudyRooms: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [rooms, setRooms] = useState<StudyRoom[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedSubject, setSelectedSubject] = useState<string>('All Subjects');
@@ -177,6 +179,7 @@ export const StudyRooms: React.FC = () => {
         onClose={() => setCreateModalOpen(false)}
         onCreated={(newRoom) => {
           setRooms((prev) => [newRoom, ...prev]);
+          toast.success(`Study room "${newRoom.name}" created!`, 'Room Created');
         }}
       />
     </div>

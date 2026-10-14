@@ -239,9 +239,15 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                           className="bg-white rounded-lg p-2.5 border border-gray-200 text-xs space-y-1 shadow-2xs"
                         >
                           <div className="flex items-center justify-between text-[11px]">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <CornerDownRight className="w-3 h-3 text-[#98A2B3]" />
                               <span className="font-bold text-[#151C2F]">{reply.senderName}</span>
+                              {isResolved && (
+                                <span className="text-[10px] bg-[#DCFCE7] text-[#15803D] font-bold px-1.5 py-0.5 rounded-full border border-[#86EFAC] flex items-center gap-0.5">
+                                  <Check className="w-2.5 h-2.5" />
+                                  <span>+50 pts Solution</span>
+                                </span>
+                              )}
                             </div>
                             <span className="text-[10px] text-[#98A2B3]">
                               {reply.createdAt

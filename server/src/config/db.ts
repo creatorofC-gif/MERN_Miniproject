@@ -22,18 +22,22 @@ export const connectDB = async (): Promise<boolean> => {
     return false;
   }
 
-  const isAtlas = MONGO_URI.includes('mongodb.net') || MONGO_URI.startsWith('mongodb+srv://');
+  let cleanUri = MONGO_URI.trim().replace(/^["']|["']$/g, '');
+
+  // Handle case where database name was placed as query param /?studysphere instead of path /StudySphere?
+  if (cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
+    cleanUri = cleanUri.replace(/\/?\?studysphere(\b|$)/i, '/StudySphere?retryWrites=true&w=majority');
+  }
+
+  const isAtlas = cleanUri.includes('mongodb.net') || cleanUri.startsWith('mongodb+srv://');
   try {
     const options: mongoose.ConnectOptions = {
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 10000,
       autoIndex: true,
+      dbName: 'StudySphere',
     };
 
-    if (isAtlas) {
-      options.retryWrites = true;
-    }
-
-    const conn = await mongoose.connect(MONGO_URI, options);
+    const conn = await mongoose.connect(cleanUri, options);
 
     mongoose.connection.on('disconnected', () => {
       console.warn('[Database] Notice: Disconnected from MongoDB. Attempting auto-reconnect...');

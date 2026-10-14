@@ -61,6 +61,18 @@ app.use('/api/doubts', doubtRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Root endpoint (browser status check for Render)
+app.get('/', (_req: Request, res: Response) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.json({
+    status: 'online',
+    message: '🎓 StudySphere API & WebSocket Server is Running',
+    database: isDbConnected ? 'Connected' : 'Connecting...',
+    dbName: mongoose.connection.name || 'StudySphere',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
   const isDbConnected = mongoose.connection.readyState === 1;

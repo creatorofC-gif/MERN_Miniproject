@@ -33,7 +33,7 @@ export const AskDoubtModal: React.FC<AskDoubtModalProps> = ({
 
     setLoading(true);
     try {
-      await doubtsService.createDoubt({
+      const created = await doubtsService.createDoubt({
         title,
         description,
         codeSnippet: codeSnippet.trim() || undefined,
@@ -44,7 +44,12 @@ export const AskDoubtModal: React.FC<AskDoubtModalProps> = ({
         authorName: user?.name || 'Scholar',
         authorAvatar: user?.avatar || '',
       });
+      setTitle('');
+      setDescription('');
+      setCodeSnippet('');
+      setIsUrgent(false);
       onClose();
+      if (onCreated) onCreated(created);
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);

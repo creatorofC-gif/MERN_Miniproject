@@ -55,6 +55,13 @@ export const Doubts: React.FC = () => {
 
   useEffect(() => {
     fetchDoubts();
+    const pollTimer = setInterval(() => {
+      doubtService
+        .getDoubts()
+        .then((latest) => setDoubts(latest))
+        .catch(() => {});
+    }, 8000);
+    return () => clearInterval(pollTimer);
   }, []);
 
   const handleUpvote = async (doubtId: string) => {
@@ -270,9 +277,13 @@ export const Doubts: React.FC = () => {
         isOpen={askModalOpen}
         onClose={() => setAskModalOpen(false)}
         onCreated={(newDoubt) => {
-          setDoubts((prev) => [newDoubt, ...prev]);
+          if (newDoubt) {
+            setDoubts((prev) => [newDoubt, ...prev.filter((d) => (d._id || d.id) !== (newDoubt._id || newDoubt.id))]);
+          }
           toast.success('Your doubt has been published to the campus board.', 'Doubt Posted');
+          fetchDoubts();
         }}
+        onSuccess={fetchDoubts}
       />
     </div>
   );

@@ -17,12 +17,15 @@ if (process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1') {
   app.set('trust proxy', process.env.TRUST_PROXY);
 }
 
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://localhost:5000',
-];
+// Parse allowed client origins strictly from environment variables (CLIENT_URL)
+const rawClientUrls = process.env.CLIENT_URL || '';
+const configuredOrigins = rawClientUrls
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+// Local development fallback origins (only active in local dev, not production)
+const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
 
 // Security Headers Middleware
 app.use((_req: Request, res: Response, next: NextFunction) => {
@@ -33,22 +36,36 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Hardened CORS configuration
+// Environment-Driven Production CORS Configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, or same-origin)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, false);
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/$/, '');
+
+      // 1. Check against origins specified in CLIENT_URL environment variable
+      if (configuredOrigins.includes(normalizedOrigin) || process.env.CLIENT_URL === '*') {
+        return callback(null, true);
       }
+
+      // 2. Allow local development origins only when not in production
+      if (process.env.NODE_ENV !== 'production' && devOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`[CORS Blocked]: Origin "${origin}" is not listed in CLIENT_URL environment variable.`);
+      callback(null, false);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
+
+// Explicit OPTIONS preflight handling
+app.options('*', cors());
 
 // Payload size limit
 app.use(express.json({ limit: '1mb' }));

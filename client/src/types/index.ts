@@ -31,6 +31,17 @@ export interface Participant {
 
 export interface DoubtReply {
   _id: string;
+  senderId?: string;
+  senderName: string;
+  senderAvatar?: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface PrivateDoubtMessage {
+  _id?: string;
+  doubtId: string;
+  senderId?: string;
   senderName: string;
   senderAvatar?: string;
   text: string;

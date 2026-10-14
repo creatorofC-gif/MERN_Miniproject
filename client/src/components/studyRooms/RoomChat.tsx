@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, AlertCircle, CheckCircle2, MessageSquare, Check, CornerDownRight } from 'lucide-react';
+import { Send, Plus, AlertCircle, CheckCircle2, MessageSquare, Check, CornerDownRight, Sparkles, Lock } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { ChatMessage } from '../../types';
 
@@ -9,6 +9,7 @@ interface RoomChatProps {
   onRaiseDoubt?: (text: string) => void;
   onReplyDoubt?: (doubtId: string, text: string) => void;
   onResolveDoubt?: (doubtId: string) => void;
+  onOpenPrivateSolve?: (doubt: ChatMessage) => void;
   currentUserId?: string;
   activeTab?: 'chat' | 'doubts';
   onTabChange?: (tab: 'chat' | 'doubts') => void;
@@ -20,6 +21,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
   onRaiseDoubt,
   onReplyDoubt,
   onResolveDoubt,
+  onOpenPrivateSolve,
   activeTab: controlledTab,
   onTabChange,
 }) => {
@@ -184,7 +186,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       {isResolved ? (
                         <span className="px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold border border-[#86EFAC] flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" />
@@ -197,11 +199,23 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                         </span>
                       )}
 
+                      {/* Solve Doubt in Private Chat Button */}
+                      {onOpenPrivateSolve && (
+                        <button
+                          onClick={() => onOpenPrivateSolve(msg)}
+                          title="Open private 1-on-1 chat window to solve this doubt"
+                          className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0057BE] to-indigo-600 hover:from-[#00469B] hover:to-indigo-700 text-white text-[10px] font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="w-3 h-3 text-amber-300" />
+                          <span>Solve Doubt</span>
+                        </button>
+                      )}
+
                       {!isResolved && onResolveDoubt && (
                         <button
                           onClick={() => onResolveDoubt(doubtId)}
                           title="Mark doubt as resolved"
-                          className="px-2 py-0.5 rounded-md bg-white hover:bg-[#DCFCE7] text-[#15803D] border border-gray-200 text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                          className="px-2 py-1 rounded-lg bg-white hover:bg-[#DCFCE7] text-[#15803D] border border-gray-200 text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
                         >
                           <Check className="w-2.5 h-2.5" />
                           <span>Resolve</span>
@@ -289,6 +303,19 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                       <span>Answer</span>
                     </button>
                   </form>
+
+                  {onOpenPrivateSolve && !isResolved && (
+                    <div className="flex justify-end pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => onOpenPrivateSolve(msg)}
+                        className="text-[10px] font-bold text-[#0057BE] hover:text-[#00469B] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Need 1-on-1 walkthrough? Open private solve chat →</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             }

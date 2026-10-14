@@ -218,6 +218,56 @@ export const setupRoomSocket = (io: Server): void => {
       }
     });
 
+    // Send Private Doubt Solving Message
+    socket.on('send_private_doubt_message', async (data: {
+      roomId?: string;
+      doubtId?: string;
+      text?: string;
+      doubtTitle?: string;
+    }) => {
+      if (!checkRateLimit(socket.id, 8, 2000)) {
+        socket.emit('socket_error', { message: 'Message rate limit exceeded. Please wait a moment.' });
+        return;
+      }
+
+      const user = activeUsers.get(socket.id);
+      const roomId = typeof data?.roomId === 'string' ? data.roomId.trim() : user?.roomId || '';
+      const doubtId = typeof data?.doubtId === 'string' ? data.doubtId.trim() : '';
+      const text = typeof data?.text === 'string' ? data.text.trim().slice(0, 2000) : '';
+
+      if (!roomId || !doubtId || !text) return;
+
+      const privateMsg = {
+        _id: `pmsg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        doubtId,
+        senderId: user?.userId || '',
+        senderName: user?.userName || 'Student',
+        senderAvatar: user?.userAvatar || '',
+        text,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Broadcast to room participants in this doubt session
+      io.to(roomId).emit('new_private_doubt_message', privateMsg);
+
+      // Record solver reply so resolution awards points to this solver
+      const replyRecord = {
+        _id: privateMsg._id,
+        senderId: user?.userId || '',
+        senderName: user?.userName || 'Student',
+        senderAvatar: user?.userAvatar || '',
+        text: `[Private Session] ${text}`,
+        createdAt: new Date(),
+      };
+
+      if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
+        StudyRoom.updateOne(
+          { _id: roomId, 'messages._id': doubtId },
+          { $push: { 'messages.$.doubtReplies': replyRecord } }
+        ).catch(() => {});
+      }
+    });
+
     // Mark a Room Doubt as Resolved and Award Points to Solvers
     socket.on('resolve_room_doubt', async (data: { roomId?: string; doubtId?: string }) => {
       const user = activeUsers.get(socket.id);

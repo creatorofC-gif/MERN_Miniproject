@@ -94,7 +94,26 @@ test('Integration: WebSocket in-room doubt flow (raise, reply, resolve)', async 
   });
   await replyPromise;
 
-  // 3. Peer 1 resolves the live doubt
+  // 3. Peer 2 opens private solving chat and sends a private walkthrough message
+  const privateMsgPromise = new Promise<void>((resolve) => {
+    socketClient1.on('new_private_doubt_message', (pMsg: any) => {
+      if (pMsg.doubtId === raisedDoubtId) {
+        assert.equal(pMsg.senderName, 'Peer 2');
+        assert.equal(pMsg.text, 'Here is the detailed private hint for step 2.');
+        resolve();
+      }
+    });
+  });
+
+  socketClient2.emit('send_private_doubt_message', {
+    roomId,
+    doubtId: raisedDoubtId,
+    text: 'Here is the detailed private hint for step 2.',
+    doubtTitle: 'How to calculate definite integrals in calculus?',
+  });
+  await privateMsgPromise;
+
+  // 4. Peer 1 resolves the live doubt
   const resolvePromise = new Promise<void>((resolve) => {
     socketClient2.on('room_doubt_resolved', ({ doubtId }: any) => {
       if (doubtId === raisedDoubtId) {

@@ -10,12 +10,13 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
-import { StudyRoom as StudyRoomType, ChatMessage, Participant } from '../types';
+import { StudyRoom as StudyRoomType, ChatMessage, Participant, PrivateDoubtMessage } from '../types';
 import { roomService } from '../services/rooms.service';
 import { StudyTimer } from '../components/studyRooms/StudyTimer';
 import { AmbiancePlayer } from '../components/studyRooms/AmbiancePlayer';
 import { RoomChat } from '../components/studyRooms/RoomChat';
 import { ParticipantList } from '../components/studyRooms/ParticipantList';
+import { PrivateDoubtChat } from '../components/studyRooms/PrivateDoubtChat';
 import { Button } from '../components/ui/Button';
 
 export const StudyRoom: React.FC = () => {
@@ -32,6 +33,8 @@ export const StudyRoom: React.FC = () => {
   const [liveCount, setLiveCount] = useState<number>(0);
   const [alertBanner, setAlertBanner] = useState<{ sender: string; title: string } | null>(null);
   const [roomChatTab, setRoomChatTab] = useState<'chat' | 'doubts'>('chat');
+  const [activePrivateDoubt, setActivePrivateDoubt] = useState<ChatMessage | null>(null);
+  const [privateMessages, setPrivateMessages] = useState<{ [doubtId: string]: PrivateDoubtMessage[] }>({});
   const [externalSync, setExternalSync] = useState<{
     action: string;
     timeRemaining: number;
@@ -165,6 +168,14 @@ export const StudyRoom: React.FC = () => {
         })
       );
 
+      // Update active private doubt window if currently open
+      setActivePrivateDoubt((prev) => {
+        if (prev && (prev._id === payload.doubtId || (prev as any).doubtId === payload.doubtId)) {
+          return { ...prev, isResolved: true };
+        }
+        return prev;
+      });
+
       // Check if current user is one of the solvers who answered the doubt
       const myId = user?.id || (user as any)?._id;
       const isMySolution = payload.awardedSolvers?.some(
@@ -183,6 +194,26 @@ export const StudyRoom: React.FC = () => {
       }
     });
 
+    // Listen to real-time private doubt solving messages
+    socket.on('new_private_doubt_message', (pMsg: PrivateDoubtMessage) => {
+      setPrivateMessages((prev) => ({
+        ...prev,
+        [pMsg.doubtId]: [...(prev[pMsg.doubtId] || []), pMsg],
+      }));
+
+      // If user isn't the sender and doesn't have this doubt open, toast notification
+      const isMe =
+        (user?.id && pMsg.senderId && user.id === pMsg.senderId) ||
+        (user?.name && pMsg.senderName.toLowerCase() === user.name.toLowerCase());
+
+      if (!isMe) {
+        toast.info(
+          `Private solve message from ${pMsg.senderName}: "${pMsg.text.slice(0, 45)}..."`,
+          'Doubt Solving Message'
+        );
+      }
+    });
+
     // Listen to direct points awarded event
     socket.on('points_awarded', (data: { points: number; newPoints?: number; reason: string }) => {
       awardPoints(data.points);
@@ -197,10 +228,22 @@ export const StudyRoom: React.FC = () => {
       socket.off('doubt_alert_popup');
       socket.off('room_doubt_replied');
       socket.off('room_doubt_resolved');
+      socket.off('new_private_doubt_message');
       socket.off('points_awarded');
       socket.disconnect();
     };
   }, [id, room, user]);
+
+  // Send Private Doubt Message via Socket
+  const handleSendPrivateDoubtMessage = (doubtId: string, text: string) => {
+    if (!socketRef.current || !id) return;
+    socketRef.current.emit('send_private_doubt_message', {
+      roomId: id,
+      doubtId,
+      text,
+      doubtTitle: activePrivateDoubt?.text,
+    });
+  };
 
   // Send Chat Message via Socket
   const handleSendMessage = (text: string, type: 'message' | 'doubt_alert' = 'message') => {
@@ -406,12 +449,35 @@ export const StudyRoom: React.FC = () => {
             onRaiseDoubt={handleRaiseDoubt}
             onReplyDoubt={handleReplyDoubt}
             onResolveDoubt={handleResolveDoubt}
+            onOpenPrivateSolve={(targetDoubt) => setActivePrivateDoubt(targetDoubt)}
             currentUserId={user?.id}
             activeTab={roomChatTab}
             onTabChange={setRoomChatTab}
           />
         </div>
       </div>
+
+      {/* Floating Private Doubt Solving Convo Window */}
+      {activePrivateDoubt && (
+        <PrivateDoubtChat
+          doubt={activePrivateDoubt}
+          messages={
+            privateMessages[
+              activePrivateDoubt._id || (activePrivateDoubt as any).doubtId || ''
+            ] || []
+          }
+          onSendMessage={(text) =>
+            handleSendPrivateDoubtMessage(
+              activePrivateDoubt._id || (activePrivateDoubt as any).doubtId || '',
+              text
+            )
+          }
+          onResolveDoubt={handleResolveDoubt}
+          onClose={() => setActivePrivateDoubt(null)}
+          currentUserId={user?.id || (user as any)?._id}
+          currentUserName={user?.name}
+        />
+      )}
     </div>
   );
 };

@@ -22,6 +22,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
   onReplyDoubt,
   onResolveDoubt,
   onOpenPrivateSolve,
+  currentUserId,
   activeTab: controlledTab,
   onTabChange,
 }) => {
@@ -199,16 +200,22 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                         </span>
                       )}
 
-                      {/* Solve Doubt in Private Chat Button */}
-                      {onOpenPrivateSolve && (
-                        <button
-                          onClick={() => onOpenPrivateSolve(msg)}
-                          title="Open private 1-on-1 chat window to solve this doubt"
-                          className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0057BE] to-indigo-600 hover:from-[#00469B] hover:to-indigo-700 text-white text-[10px] font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
-                        >
-                          <Sparkles className="w-3 h-3 text-amber-300" />
-                          <span>Solve Doubt</span>
-                        </button>
+                      {/* If current user posted the doubt, show ownership tag instead of Solve button */}
+                      {Boolean(currentUserId && msg.senderId && currentUserId === msg.senderId) ? (
+                        <span className="px-2 py-0.5 rounded-md bg-[#EAF2FC] text-[#0057BE] border border-[#BFDBFE] text-[10px] font-bold">
+                          Your Question
+                        </span>
+                      ) : (
+                        onOpenPrivateSolve && !isResolved && (
+                          <button
+                            onClick={() => onOpenPrivateSolve(msg)}
+                            title="Open private 1-on-1 chat window to solve this doubt"
+                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0057BE] to-indigo-600 hover:from-[#00469B] hover:to-indigo-700 text-white text-[10px] font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <Sparkles className="w-3 h-3 text-amber-300" />
+                            <span>Solve Doubt</span>
+                          </button>
+                        )
                       )}
 
                       {!isResolved && onResolveDoubt && (
@@ -304,7 +311,7 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                     </button>
                   </form>
 
-                  {onOpenPrivateSolve && !isResolved && (
+                  {onOpenPrivateSolve && !isResolved && !(currentUserId && msg.senderId && currentUserId === msg.senderId) && (
                     <div className="flex justify-end pt-0.5">
                       <button
                         type="button"

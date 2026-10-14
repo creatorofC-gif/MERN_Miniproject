@@ -57,6 +57,24 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
     newTotal: number;
   } | null>(null);
 
+  const isMyDoubt = Boolean(
+    user &&
+    ((doubt.authorId && (user.id === doubt.authorId || (user as any)._id === doubt.authorId)) ||
+     (doubt.authorName && user.name && doubt.authorName.trim().toLowerCase() === user.name.trim().toLowerCase()))
+  );
+
+  React.useEffect(() => {
+    if (doubt.answers) {
+      setAnswers(doubt.answers);
+    }
+    if (doubt.status) {
+      setStatus(doubt.status);
+    }
+    if (doubt.isResolved !== undefined) {
+      setIsResolved(Boolean(doubt.isResolved || doubt.status === 'solved'));
+    }
+  }, [doubt.answers, doubt.status, doubt.isResolved]);
+
   const handleVote = async () => {
     if (hasVoted) return;
     setUpvotes((prev) => prev + 1);
@@ -70,6 +88,11 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
   };
 
   const handleClaim = async () => {
+    if (isMyDoubt) {
+      toast.info('You posted this doubt. Peer scholars will solve it.', 'Your Doubt');
+      setIsExpanded(true);
+      return;
+    }
     setIsClaimed(true);
     setIsExpanded(true);
     try {
@@ -81,10 +104,18 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
 
   const handleAddAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isMyDoubt) {
+      toast.warning('Authors cannot solve their own posted doubts to claim bounty.', 'Action Restricted');
+      return;
+    }
+
     const content = answerContent.trim();
     if (!content) return;
 
-    const pointsEarned = doubt.bountyPoints || doubt.pointsReward || 50;
+    // Marketplace plan multiplier check: Pro Scholar & University Circle earn 2X!
+    const multiplier = (user?.plan === 'pro' || user?.plan === 'university') ? 2 : 1;
+    const baseBounty = doubt.bountyPoints || doubt.pointsReward || 50;
+    const pointsEarned = baseBounty * multiplier;
     const currentPoints = user?.points || 0;
     const newTotal = currentPoints + pointsEarned;
 
@@ -119,24 +150,28 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
       spread: 70,
       origin: { y: 0.65 },
     });
-    toast.success(`Solution accepted! +${pointsEarned} mastery points awarded.`, 'Bounty Claimed 🎉');
+    toast.success(
+      `Solution accepted! +${pointsEarned} mastery points awarded${multiplier > 1 ? ' (2X Pro Multiplier applied!)' : ''}.`,
+      'Bounty Claimed 🎉'
+    );
 
     // 6. Reset form and ensure thread is expanded
     setAnswerContent('');
     setIsExpanded(true);
 
-    // 7. Notify parent component
-    onAddAnswer?.(doubt._id || doubt.id!, content);
-
-    // 8. Persist to API
+    // 7. Persist to API: If parent provided onAddAnswer, delegate to parent; otherwise call API directly (never both!)
     setSubmitting(true);
     try {
-      await doubtsService.addAnswer(doubt._id || doubt.id!, {
-        content,
-        authorName: user?.name || 'Scholar',
-        authorAvatar: user?.avatar,
-      });
-      if (onRefresh) onRefresh();
+      if (onAddAnswer) {
+        await onAddAnswer(doubt._id || doubt.id!, content);
+      } else {
+        await doubtsService.addAnswer(doubt._id || doubt.id!, {
+          content,
+          authorName: user?.name || 'Scholar',
+          authorAvatar: user?.avatar,
+        });
+        if (onRefresh) onRefresh();
+      }
     } catch (err) {
       console.warn('Backend sync for answer:', err);
     } finally {
@@ -279,6 +314,14 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Resolved • View Thread ({answers.length})</span>
             </button>
+          ) : isMyDoubt ? (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#EAF2FC] text-[#0057BE] border border-[#BFDBFE] hover:bg-[#D5E6F9] transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#0057BE] animate-pulse" />
+              <span>Your Doubt • Awaiting Peers ({answers.length})</span>
+            </button>
           ) : (
             <Button
               variant="dark"
@@ -370,17 +413,13 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
             ))
           )}
 
-          {/* Add Answer Form */}
-          <form onSubmit={handleAddAnswer} className="space-y-2.5 pt-2">
-            <textarea
-              rows={3}
-              value={answerContent}
-              onChange={(e) => setAnswerContent(e.target.value)}
-              placeholder="Write your step-by-step solution to help peer and earn mastery score..."
-              className="w-full bg-white border border-[#E5E7EB] rounded-lg p-3 text-xs text-[#151C2F] placeholder-[#98A2B3] outline-none focus:border-[#0057BE] focus:ring-2 focus:ring-[#0057BE]/15 font-sans"
-              required
-            />
-            <div className="flex justify-end gap-2">
+          {/* Add Answer Form or Author Notice */}
+          {isMyDoubt ? (
+            <div className="p-3.5 rounded-xl bg-[#F8F9FB] border border-[#E5E7EB] text-xs text-[#475467] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#0057BE] animate-pulse" />
+                <span>You posted this academic doubt. Verified peer scholars will post solutions here.</span>
+              </div>
               <Button
                 type="button"
                 variant="ghost"
@@ -389,17 +428,38 @@ export const DoubtCard: React.FC<DoubtCardProps> = ({
               >
                 Close Thread
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                disabled={submitting || !answerContent.trim()}
-                className="bg-[#0057BE] hover:bg-[#00469B] font-bold"
-              >
-                {submitting ? 'Submitting...' : `Submit Response (+${bountyValue} Mastery)`}
-              </Button>
             </div>
-          </form>
+          ) : !isResolved ? (
+            <form onSubmit={handleAddAnswer} className="space-y-2.5 pt-2">
+              <textarea
+                rows={3}
+                value={answerContent}
+                onChange={(e) => setAnswerContent(e.target.value)}
+                placeholder="Write your step-by-step solution to help peer and earn mastery score..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-lg p-3 text-xs text-[#151C2F] placeholder-[#98A2B3] outline-none focus:border-[#0057BE] focus:ring-2 focus:ring-[#0057BE]/15 font-sans"
+                required
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(false)}
+                >
+                  Close Thread
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  disabled={submitting || !answerContent.trim()}
+                  className="bg-[#0057BE] hover:bg-[#00469B] font-bold"
+                >
+                  {submitting ? 'Submitting...' : `Submit Response (+${bountyValue} Mastery)`}
+                </Button>
+              </div>
+            </form>
+          ) : null}
         </div>
       )}
     </Card>

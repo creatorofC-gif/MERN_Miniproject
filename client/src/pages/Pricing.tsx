@@ -1,11 +1,74 @@
 import React, { useState } from 'react';
-import { Check, Sparkles, Zap, Shield, HelpCircle, ArrowRight } from 'lucide-react';
+import { Check, Sparkles, Zap, Shield, HelpCircle, ArrowRight, Crown, Building2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { usersService } from '../services/users.service';
+import confetti from 'canvas-confetti';
 
 export const Pricing: React.FC = () => {
+  const { user, setUser } = useAuth();
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [updatingPlan, setUpdatingPlan] = useState<string | null>(null);
+
+  const currentPlan = user?.plan || 'free';
+
+  const handleSelectPlan = async (targetPlan: 'free' | 'pro' | 'university') => {
+    if (currentPlan === targetPlan) {
+      toast.info(
+        `You are currently on the ${
+          targetPlan === 'pro'
+            ? 'Pro Scholar'
+            : targetPlan === 'university'
+            ? 'University Circle'
+            : 'Free Scholar'
+        } plan.`,
+        'Active Plan'
+      );
+      return;
+    }
+
+    setUpdatingPlan(targetPlan);
+    try {
+      const updated = await usersService.updateProfile({ plan: targetPlan });
+      if (setUser && user) {
+        setUser({ ...user, ...updated, plan: targetPlan });
+      }
+      if (targetPlan === 'pro') {
+        confetti({ particleCount: 80, spread: 75, origin: { y: 0.6 } });
+        toast.success(
+          '🎉 Welcome to Pro Scholar! 2X Doubt Bounty Multiplier & Unlimited AI Suite unlocked!',
+          'Upgraded to Pro'
+        );
+      } else if (targetPlan === 'university') {
+        confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+        toast.success(
+          '🏛️ University Circle activated! Campus group licensing & Department Leaderboard enabled!',
+          'University Circle Active'
+        );
+      } else {
+        toast.info('Switched to Free Scholar plan.', 'Plan Updated');
+      }
+    } catch (err) {
+      // Optimistic local update fallback
+      if (setUser && user) {
+        setUser({ ...user, plan: targetPlan });
+      }
+      toast.success(
+        `Switched to ${
+          targetPlan === 'pro'
+            ? 'Pro Scholar'
+            : targetPlan === 'university'
+            ? 'University Circle'
+            : 'Free'
+        } plan.`,
+        'Plan Updated'
+      );
+    } finally {
+      setUpdatingPlan(null);
+    }
+  };
 
   const proPrice = billingCycle === 'yearly' ? '$9.60' : '$12';
   const instPrice = billingCycle === 'yearly' ? '$39' : '$49';
@@ -94,12 +157,22 @@ export const Pricing: React.FC = () => {
           </div>
 
           <Button
-            variant="outline"
+            variant={currentPlan === 'free' ? 'outline' : 'ghost'}
             size="lg"
             fullWidth
-            className="mt-8 rounded-xl font-bold text-xs"
+            disabled={updatingPlan !== null}
+            onClick={() => handleSelectPlan('free')}
+            className={`mt-8 rounded-xl font-bold text-xs ${
+              currentPlan === 'free'
+                ? 'border-[#10B981] text-[#10B981] bg-emerald-50/50'
+                : 'text-[#667085] hover:bg-gray-100'
+            }`}
           >
-            Your Current Plan
+            {updatingPlan === 'free'
+              ? 'Updating...'
+              : currentPlan === 'free'
+              ? '✓ Your Active Plan'
+              : 'Switch to Free Scholar'}
           </Button>
         </div>
 
@@ -151,10 +224,19 @@ export const Pricing: React.FC = () => {
             variant="primary"
             size="lg"
             fullWidth
-            className="mt-8 rounded-xl font-extrabold text-xs bg-[#0057BE] hover:bg-[#00479E] text-white shadow-md shadow-blue-600/30"
-            onClick={() => toast.success('Pro upgrade initiated! Welcome to Pro Scholar.', 'Upgrade Initiated')}
+            disabled={updatingPlan !== null}
+            onClick={() => handleSelectPlan('pro')}
+            className={`mt-8 rounded-xl font-extrabold text-xs shadow-md shadow-blue-600/30 ${
+              currentPlan === 'pro'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-[#0057BE] hover:bg-[#00479E] text-white'
+            }`}
           >
-            Upgrade to Pro Scholar
+            {updatingPlan === 'pro'
+              ? 'Activating Pro...'
+              : currentPlan === 'pro'
+              ? '✓ Your Active Plan (Pro Scholar)'
+              : 'Upgrade to Pro Scholar'}
           </Button>
         </div>
 
@@ -198,10 +280,19 @@ export const Pricing: React.FC = () => {
             variant="outline"
             size="lg"
             fullWidth
-            className="mt-8 rounded-xl font-bold text-xs"
-            onClick={() => toast.info('Campus coordinator has been notified. We will reach out shortly.', 'Campus Team Contacted')}
+            disabled={updatingPlan !== null}
+            onClick={() => handleSelectPlan('university')}
+            className={`mt-8 rounded-xl font-bold text-xs ${
+              currentPlan === 'university'
+                ? 'border-indigo-600 text-indigo-700 bg-indigo-50/60 font-extrabold'
+                : 'border-gray-300 hover:bg-gray-50 text-[#151C2F]'
+            }`}
           >
-            Contact Campus Team
+            {updatingPlan === 'university'
+              ? 'Activating Circle...'
+              : currentPlan === 'university'
+              ? '✓ Your Active Plan (University Circle)'
+              : 'Join University Circle'}
           </Button>
         </div>
       </div>

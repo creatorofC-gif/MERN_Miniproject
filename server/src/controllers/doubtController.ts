@@ -166,28 +166,56 @@ export const addAnswer = async (req: AuthRequest, res: Response): Promise<void> 
     let authorName = bodyAuthorName || 'Scholar';
     let authorAvatar = bodyAuthorAvatar || '';
 
-    if (req.user?.id) {
-      try {
-        const dbUser = await User.findById(req.user.id);
-        if (dbUser) {
-          authorName = dbUser.name || authorName;
-          authorAvatar = dbUser.avatar || authorAvatar;
-          // Award mastery bounty points to the user
-          dbUser.points = (dbUser.points || 0) + 50;
-          await dbUser.save();
-        }
-      } catch {
-        if (req.user?.email && !bodyAuthorName) authorName = req.user.email.split('@')[0];
-      }
-    }
-
     if (id && mongoose.Types.ObjectId.isValid(id)) {
       const doubt = await Doubt.findById(id);
       if (doubt) {
+        // Resolve solver identity
+        let solverUser = null;
+        if (req.user?.id) {
+          try {
+            solverUser = await User.findById(req.user.id);
+            if (solverUser) {
+              authorName = solverUser.name || authorName;
+              authorAvatar = solverUser.avatar || authorAvatar;
+            }
+          } catch {
+            if (req.user?.email && !bodyAuthorName) authorName = req.user.email.split('@')[0];
+          }
+        }
+
+        // Logical Rule: The person who posted the doubt cannot answer it
+        const isAuthor =
+          (doubt.authorId && req.user?.id && doubt.authorId.toString() === req.user.id) ||
+          (doubt.authorName && authorName && doubt.authorName.trim().toLowerCase() === authorName.trim().toLowerCase());
+
+        if (isAuthor) {
+          res.status(400).json({ message: 'Authors cannot answer their own doubts to claim bounty points.' });
+          return;
+        }
+
+        // Invariant: Cannot answer already resolved doubt
+        if (doubt.isResolved || doubt.status === 'solved') {
+          res.status(400).json({ message: 'This doubt has already been resolved.' });
+          return;
+        }
+
+        // Award points to the solver with Marketplace plan multiplier (2X for Pro Scholar & University Circle)
+        if (solverUser) {
+          const multiplier = (solverUser.plan === 'pro' || solverUser.plan === 'university') ? 2 : 1;
+          const baseBounty = doubt.pointsReward || 50;
+          const pointsEarned = baseBounty * multiplier;
+          solverUser.points = (solverUser.points || 0) + pointsEarned;
+          if (solverUser.points >= 1000) solverUser.tier = 'Master Tier';
+          else if (solverUser.points >= 500) solverUser.tier = 'Senior Scholar';
+          else if (solverUser.points >= 200) solverUser.tier = 'Scholar Tier';
+          await solverUser.save();
+        }
+
         doubt.answers.push({
           authorName,
           authorAvatar,
-          authorTier: 'Master Tier',
+          authorTier: solverUser?.tier || 'Scholar Tier',
+          authorId: solverUser?._id,
           content: content.trim().slice(0, 5000),
           isAccepted: true,
           upvotes: 0,
@@ -200,6 +228,19 @@ export const addAnswer = async (req: AuthRequest, res: Response): Promise<void> 
         res.status(201).json(doubt);
         return;
       }
+    }
+
+    // Synthetic response for non-ObjectId / in-memory test mocks
+    if (req.user?.id) {
+      try {
+        const dbUser = await User.findById(req.user.id);
+        if (dbUser) {
+          authorName = dbUser.name || authorName;
+          authorAvatar = dbUser.avatar || authorAvatar;
+          dbUser.points = (dbUser.points || 0) + 50;
+          await dbUser.save();
+        }
+      } catch {}
     }
 
     // Synthetic response for non-ObjectId / mock data

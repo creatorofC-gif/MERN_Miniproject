@@ -5,6 +5,7 @@ export interface User {
   email: string;
   avatar: string;
   tier: string;
+  plan?: 'free' | 'pro' | 'university';
   points: number;
   streak: number;
   year?: string;

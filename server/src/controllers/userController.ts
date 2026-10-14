@@ -21,7 +21,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { name, bio, year, branch, college, avatar } = req.body;
+    const { name, bio, year, branch, college, avatar, plan } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
@@ -35,6 +35,9 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     if (typeof college === 'string') user.college = college.trim().slice(0, 100);
     if (typeof avatar === 'string' && (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image/'))) {
       user.avatar = avatar;
+    }
+    if (plan && ['free', 'pro', 'university'].includes(plan)) {
+      user.plan = plan;
     }
 
     await user.save();

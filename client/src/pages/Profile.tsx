@@ -7,7 +7,16 @@ import {
   Check,
   Trophy,
   GraduationCap,
+  Crown,
+  Sparkles,
+  Zap,
+  Building2,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usersService } from '../services/users.service';
@@ -17,12 +26,44 @@ import { Button } from '../components/ui/Button';
 export const Profile: React.FC = () => {
   const { user, setUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [college, setCollege] = useState(user?.college || '');
   const [branch, setBranch] = useState(user?.branch || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [saving, setSaving] = useState(false);
+  const [switchingPlan, setSwitchingPlan] = useState(false);
+
+  const currentPlan = user?.plan || 'free';
+
+  const handleSwitchPlan = async (targetPlan: 'free' | 'pro' | 'university') => {
+    if (currentPlan === targetPlan) return;
+    setSwitchingPlan(true);
+
+    try {
+      const updated = await usersService.updateProfile({ plan: targetPlan });
+      if (setUser && user) {
+        setUser({ ...user, ...updated, plan: targetPlan });
+      }
+      if (targetPlan === 'pro') {
+        confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+        toast.success('🎉 Pro Scholar Activated! 2X Bounty Points & Unlimited AI Tools unlocked!', 'Plan Switched');
+      } else if (targetPlan === 'university') {
+        confetti({ particleCount: 85, spread: 75, origin: { y: 0.6 } });
+        toast.success('🏛️ University Circle Activated! Departmental Leaderboard & Campus Circle enabled!', 'Plan Switched');
+      } else {
+        toast.info('Switched to Free Scholar tier.', 'Plan Updated');
+      }
+    } catch {
+      if (setUser && user) {
+        setUser({ ...user, plan: targetPlan });
+      }
+      toast.success(`Switched to ${targetPlan === 'pro' ? 'Pro Scholar' : targetPlan === 'university' ? 'University Circle' : 'Free'} plan.`, 'Plan Updated');
+    } finally {
+      setSwitchingPlan(false);
+    }
+  };
 
   React.useEffect(() => {
     if (user) {
@@ -96,24 +137,71 @@ export const Profile: React.FC = () => {
   return (
     <div className="space-y-8 font-sans max-w-5xl mx-auto pb-12">
       {/* Profile Header Card */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-xs relative">
+      <div
+        className={`rounded-2xl border p-6 sm:p-8 shadow-xs relative transition-all ${
+          currentPlan === 'pro'
+            ? 'border-amber-300 bg-gradient-to-br from-white via-amber-50/30 to-yellow-50/40 shadow-amber-500/5'
+            : currentPlan === 'university'
+            ? 'border-indigo-300 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/40 shadow-indigo-500/5'
+            : 'border-[#E5E7EB] bg-white'
+        }`}
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <Avatar
-              src={user?.avatar}
-              name={user?.name || 'Scholar'}
-              size="xl"
-              ring="amber"
-            />
+            <div className="relative">
+              <Avatar
+                src={user?.avatar}
+                name={user?.name || 'Scholar'}
+                size="xl"
+                ring={currentPlan === 'pro' ? 'amber' : currentPlan === 'university' ? 'blue' : 'none'}
+              />
+              {currentPlan === 'pro' && (
+                <div
+                  title="Verified Pro Scholar"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 text-white flex items-center justify-center shadow-xs border-2 border-white"
+                >
+                  <Crown className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              {currentPlan === 'university' && (
+                <div
+                  title="University Circle Member"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-[#0057BE] to-indigo-700 text-white flex items-center justify-center shadow-xs border-2 border-white"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+            </div>
+
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-extrabold text-[#151C2F]">
                   {user?.name || 'Scholar'}
                 </h1>
+
+                {/* Academic Mastery Tier */}
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
                   {user?.tier || 'Novice Scholar'}
                 </span>
+
+                {/* Marketplace Plan Badge with Clear Distinction */}
+                {currentPlan === 'pro' ? (
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 text-white flex items-center gap-1 shadow-xs animate-in fade-in">
+                    <Crown className="w-3.5 h-3.5 text-amber-200" />
+                    <span>PRO SCHOLAR</span>
+                  </span>
+                ) : currentPlan === 'university' ? (
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#0057BE] via-indigo-600 to-purple-600 text-white flex items-center gap-1 shadow-xs animate-in fade-in">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-200" />
+                    <span>UNIVERSITY CIRCLE</span>
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    Free Scholar
+                  </span>
+                )}
               </div>
+
               <p className="text-xs text-[#667085] flex items-center gap-1.5">
                 <GraduationCap className="w-3.5 h-3.5 text-[#0057BE]" />
                 <span>{user?.college || 'Add your university / college'}</span> •{' '}
@@ -125,15 +213,17 @@ export const Profile: React.FC = () => {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-            className="rounded-lg text-xs font-bold"
-          >
-            <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-            {isEditing ? 'Cancel' : 'Edit Profile'}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(!isEditing)}
+              className="rounded-lg text-xs font-bold"
+            >
+              <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+              {isEditing ? 'Cancel' : 'Edit Profile'}
+            </Button>
+          </div>
         </div>
 
         {/* Edit Form Drawer */}
@@ -220,6 +310,230 @@ export const Profile: React.FC = () => {
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 text-center">
           <div className="text-2xl font-extrabold text-[#10B981]">{focusHours} hrs</div>
           <div className="text-xs text-[#667085] mt-0.5">Weekly Focus</div>
+        </div>
+      </div>
+
+      {/* Marketplace Membership & Tier Features Card */}
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0057BE] text-[11px] font-bold uppercase tracking-wider mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Marketplace Tier Privileges</span>
+            </div>
+            <h3 className="text-lg font-extrabold text-[#151C2F]">
+              Active Plan: {currentPlan === 'pro' ? 'Pro Scholar ⚡' : currentPlan === 'university' ? 'University Circle 🏛️' : 'Free Scholar'}
+            </h3>
+            <p className="text-xs text-[#667085]">
+              {currentPlan === 'pro'
+                ? 'Your account has 2X bounty multipliers and full unlocked access to the AI tool suite.'
+                : currentPlan === 'university'
+                ? 'Your account is linked to your campus department with 50-member group licensing and LMS sync.'
+                : 'Standard access enabled. Upgrade to Pro Scholar or University Circle for 2X multipliers and perks.'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/pricing')}
+              className="rounded-lg text-xs font-bold text-[#0057BE] border-[#0057BE]/30 hover:bg-[#EAF2FC]"
+            >
+              <span>Explore Marketplace</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Plan Privileges Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Perk 1: Bounty Multiplier */}
+          <div
+            className={`p-4 rounded-xl border transition-all ${
+              currentPlan === 'pro' || currentPlan === 'university'
+                ? 'border-amber-200 bg-amber-50/40 text-amber-950'
+                : 'border-gray-200 bg-gray-50/60 text-gray-500'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+              </div>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-amber-200 text-amber-900'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {currentPlan === 'pro' || currentPlan === 'university' ? '2X MULTIPLIER' : '1X STANDARD'}
+              </span>
+            </div>
+            <h4 className="text-xs font-bold text-[#151C2F]">Doubt Bounty Multiplier</h4>
+            <p className="text-[11px] text-[#667085] mt-1">
+              {currentPlan === 'pro' || currentPlan === 'university'
+                ? 'Earn +100 Pts (Double score) on every accepted doubt solution!'
+                : 'Standard +50 Pts bounty per doubt solution.'}
+            </p>
+          </div>
+
+          {/* Perk 2: AI Summaries */}
+          <div
+            className={`p-4 rounded-xl border transition-all ${
+              currentPlan === 'pro' || currentPlan === 'university'
+                ? 'border-blue-200 bg-blue-50/40 text-blue-950'
+                : 'border-gray-200 bg-gray-50/60 text-gray-500'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-[#0057BE] text-white'
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-blue-200 text-blue-900'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {currentPlan === 'pro' || currentPlan === 'university' ? 'UNLIMITED' : '5 / WEEK'}
+              </span>
+            </div>
+            <h4 className="text-xs font-bold text-[#151C2F]">AI Lecture Summaries</h4>
+            <p className="text-[11px] text-[#667085] mt-1">
+              {currentPlan === 'pro' || currentPlan === 'university'
+                ? 'Unlimited AI notes extraction, flashcards & problem breakdown.'
+                : 'Limited to 5 lecture summaries per week.'}
+            </p>
+          </div>
+
+          {/* Perk 3: Private Suites */}
+          <div
+            className={`p-4 rounded-xl border transition-all ${
+              currentPlan === 'pro' || currentPlan === 'university'
+                ? 'border-purple-200 bg-purple-50/40 text-purple-950'
+                : 'border-gray-200 bg-gray-50/60 text-gray-500'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+              </div>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  currentPlan === 'pro' || currentPlan === 'university'
+                    ? 'bg-purple-200 text-purple-900'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {currentPlan === 'pro' || currentPlan === 'university' ? 'UNLOCKED' : 'LOCKED'}
+              </span>
+            </div>
+            <h4 className="text-xs font-bold text-[#151C2F]">Private Study Rooms</h4>
+            <p className="text-[11px] text-[#667085] mt-1">
+              {currentPlan === 'pro' || currentPlan === 'university'
+                ? 'Create password-protected study suites with exclusive peer access.'
+                : 'Join public study rooms across StudySphere.'}
+            </p>
+          </div>
+
+          {/* Perk 4: Campus Circle & LMS Sync */}
+          <div
+            className={`p-4 rounded-xl border transition-all ${
+              currentPlan === 'university'
+                ? 'border-indigo-300 bg-indigo-50/50 text-indigo-950'
+                : 'border-gray-200 bg-gray-50/60 text-gray-500'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+                  currentPlan === 'university'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+              </div>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  currentPlan === 'university'
+                    ? 'bg-indigo-200 text-indigo-900'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {currentPlan === 'university' ? 'INSTITUTION' : 'CAMPUS'}
+              </span>
+            </div>
+            <h4 className="text-xs font-bold text-[#151C2F]">University Circle & LMS</h4>
+            <p className="text-[11px] text-[#667085] mt-1">
+              {currentPlan === 'university'
+                ? 'Official TA verified answers, departmental rankings & Canvas LMS sync.'
+                : 'Available on University Circle plan for student societies.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Marketplace Tier Switcher Bar in Profile */}
+        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <span className="font-bold text-[#151C2F] text-xs flex items-center gap-1.5">
+            <Crown className="w-4 h-4 text-amber-500" />
+            <span>Switch Marketplace Tier:</span>
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              disabled={switchingPlan || currentPlan === 'free'}
+              onClick={() => handleSwitchPlan('free')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                currentPlan === 'free'
+                  ? 'bg-gray-200 text-gray-700 font-extrabold'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              }`}
+            >
+              {currentPlan === 'free' ? '✓ Free Scholar' : 'Free Scholar'}
+            </button>
+            <button
+              disabled={switchingPlan || currentPlan === 'pro'}
+              onClick={() => handleSwitchPlan('pro')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                currentPlan === 'pro'
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-xs font-extrabold'
+                  : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+              }`}
+            >
+              {currentPlan === 'pro' ? '✓ Pro Scholar (Active)' : '⚡ Switch to Pro Scholar'}
+            </button>
+            <button
+              disabled={switchingPlan || currentPlan === 'university'}
+              onClick={() => handleSwitchPlan('university')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                currentPlan === 'university'
+                  ? 'bg-gradient-to-r from-[#0057BE] to-indigo-700 text-white shadow-xs font-extrabold'
+                  : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800'
+              }`}
+            >
+              {currentPlan === 'university' ? '✓ University Circle (Active)' : '🏛️ Switch to University Circle'}
+            </button>
+          </div>
         </div>
       </div>
 

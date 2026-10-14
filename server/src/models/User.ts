@@ -6,6 +6,7 @@ export interface IUser extends Document {
   passwordHash: string;
   avatar: string;
   tier: string;
+  plan: 'free' | 'pro' | 'university';
   points: number;
   streak: number;
   year?: string;
@@ -32,6 +33,7 @@ const UserSchema = new Schema<IUser>(
       default: '' 
     },
     tier: { type: String, default: 'Novice Scholar' },
+    plan: { type: String, enum: ['free', 'pro', 'university'], default: 'free' },
     points: { type: Number, default: 0 },
     streak: { type: Number, default: 0 },
     year: { type: String, default: '' },

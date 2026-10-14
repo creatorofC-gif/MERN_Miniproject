@@ -24,16 +24,16 @@ export const connectDB = async (): Promise<boolean> => {
 
   let cleanUri = MONGO_URI.trim().replace(/^["']|["']$/g, '');
 
-  // Handle case where write concern was corrupted as w=majority=Cluster0 instead of w=majority&appName=Cluster0
-  cleanUri = cleanUri.replace(/w=majority=Cluster0/gi, 'w=majority&appName=Cluster0');
-  cleanUri = cleanUri.replace(/majority=Cluster0/gi, 'majority&appName=Cluster0');
-  cleanUri = cleanUri.replace(/w=majority=[^&]*/gi, 'w=majority');
-
   const isAtlas = cleanUri.includes('mongodb.net') || cleanUri.startsWith('mongodb+srv://');
 
-  // Handle case where database name was placed as query param /?studysphere instead of path on Atlas
-  if (isAtlas && cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
-    cleanUri = cleanUri.replace(/\/?\?studysphere(\b|$)/i, '/StudySphere?retryWrites=true&w=majority');
+  if (isAtlas) {
+    // Rebuild Atlas URI: keep scheme+credentials+host, take the db name from the path (default StudySphere),
+    // and discard any malformed query such as `/?studysphere=Cluster0` or `w=majority=Cluster0`.
+    const m = cleanUri.match(/^(mongodb(?:\+srv)?:\/\/[^\/?]+)(?:\/([^?]*))?/);
+    if (m) {
+      const dbName = m[2] && m[2].trim() ? m[2] : 'StudySphere';
+      cleanUri = `${m[1]}/${dbName}?retryWrites=true&w=majority&appName=Cluster0`;
+    }
   }
 
   try {

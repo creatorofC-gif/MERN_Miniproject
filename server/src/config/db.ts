@@ -24,6 +24,11 @@ export const connectDB = async (): Promise<boolean> => {
 
   let cleanUri = MONGO_URI.trim().replace(/^["']|["']$/g, '');
 
+  // Handle case where write concern was corrupted as w=majority=Cluster0 instead of w=majority&appName=Cluster0
+  cleanUri = cleanUri.replace(/w=majority=Cluster0/gi, 'w=majority&appName=Cluster0');
+  cleanUri = cleanUri.replace(/majority=Cluster0/gi, 'majority&appName=Cluster0');
+  cleanUri = cleanUri.replace(/w=majority=[^&]*/gi, 'w=majority');
+
   // Handle case where database name was placed as query param /?studysphere instead of path /StudySphere?
   if (cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
     cleanUri = cleanUri.replace(/\/?\?studysphere(\b|$)/i, '/StudySphere?retryWrites=true&w=majority');
@@ -35,6 +40,7 @@ export const connectDB = async (): Promise<boolean> => {
       serverSelectionTimeoutMS: 10000,
       autoIndex: true,
       dbName: 'StudySphere',
+      w: 'majority',
     };
 
     const conn = await mongoose.connect(cleanUri, options);

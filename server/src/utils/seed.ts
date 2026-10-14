@@ -12,8 +12,16 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/studyspher
 export const seedDatabase = async (standalone = true): Promise<void> => {
   try {
     if (standalone) {
-      console.log('[Seed] Connecting to MongoDB:', MONGO_URI);
-      await mongoose.connect(MONGO_URI);
+      let cleanUri = MONGO_URI.trim().replace(/^["']|["']$/g, '');
+      cleanUri = cleanUri.replace(/w=majority=Cluster0/gi, 'w=majority&appName=Cluster0');
+      cleanUri = cleanUri.replace(/majority=Cluster0/gi, 'majority&appName=Cluster0');
+      cleanUri = cleanUri.replace(/w=majority=[^&]*/gi, 'w=majority');
+      if (cleanUri.match(/\/?\?studysphere(\b|$)/i)) {
+        cleanUri = cleanUri.replace(/\/?\?studysphere(\b|$)/i, '/StudySphere?retryWrites=true&w=majority');
+      }
+
+      console.log('[Seed] Connecting to MongoDB:', cleanUri);
+      await mongoose.connect(cleanUri, { dbName: 'StudySphere', w: 'majority' });
       console.log('[Seed] Connected to database:', mongoose.connection.name);
     }
 

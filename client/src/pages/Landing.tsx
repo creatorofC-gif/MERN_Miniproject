@@ -17,12 +17,7 @@ export const Landing: React.FC = () => {
           <span className="font-bold text-xl text-[#151C2F] tracking-tight">StudySphere</span>
         </NavLink>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#667085]">
-          <a href="#features" className="hover:text-[#151C2F] transition-colors">Features</a>
-          <NavLink to="/study-rooms" className="hover:text-[#151C2F] transition-colors">Library</NavLink>
-          <NavLink to="/leaderboard" className="hover:text-[#151C2F] transition-colors">Leaderboard</NavLink>
-          <NavLink to="/ai-tools" className="hover:text-[#151C2F] transition-colors">AI Tools</NavLink>
-        </nav>
+
 
         <div className="flex items-center gap-4">
           <NavLink

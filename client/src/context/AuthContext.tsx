@@ -88,8 +88,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('studysphere_token');
-    localStorage.removeItem('studysphere_user');
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.error('Failed to clear storage on sign out:', e);
+    }
   };
 
   const awardPoints = (points: number) => {

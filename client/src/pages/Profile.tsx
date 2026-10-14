@@ -14,6 +14,7 @@ import {
   Lock,
   ArrowRight,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -24,7 +25,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 
 export const Profile: React.FC = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -153,24 +154,9 @@ export const Profile: React.FC = () => {
                 src={user?.avatar}
                 name={user?.name || 'Scholar'}
                 size="xl"
-                ring={currentPlan === 'pro' ? 'amber' : currentPlan === 'university' ? 'blue' : 'none'}
+                plan={currentPlan}
+                showPlanBadge={true}
               />
-              {currentPlan === 'pro' && (
-                <div
-                  title="Verified Pro Scholar"
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 text-white flex items-center justify-center shadow-xs border-2 border-white"
-                >
-                  <Crown className="w-3.5 h-3.5 text-white" />
-                </div>
-              )}
-              {currentPlan === 'university' && (
-                <div
-                  title="University Circle Member"
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-[#0057BE] to-indigo-700 text-white flex items-center justify-center shadow-xs border-2 border-white"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-white" />
-                </div>
-              )}
             </div>
 
             <div className="space-y-1">
@@ -222,6 +208,18 @@ export const Profile: React.FC = () => {
             >
               <Edit2 className="w-3.5 h-3.5 mr-1.5" />
               {isEditing ? 'Cancel' : 'Edit Profile'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+              className="rounded-lg text-xs font-bold border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+            >
+              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              Sign Out
             </Button>
           </div>
         </div>

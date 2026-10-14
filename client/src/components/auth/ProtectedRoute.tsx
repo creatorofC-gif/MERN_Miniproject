@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // If user or token is missing, redirect to login
-  if (!user && !token) {
+  if (!user || !token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

@@ -13,7 +13,6 @@ import confetti from 'canvas-confetti';
 import { StudyRoom as StudyRoomType, ChatMessage, Participant, PrivateDoubtMessage } from '../types';
 import { roomService } from '../services/rooms.service';
 import { StudyTimer } from '../components/studyRooms/StudyTimer';
-import { AmbiancePlayer } from '../components/studyRooms/AmbiancePlayer';
 import { RoomChat } from '../components/studyRooms/RoomChat';
 import { ParticipantList } from '../components/studyRooms/ParticipantList';
 import { PrivateDoubtChat } from '../components/studyRooms/PrivateDoubtChat';
@@ -435,9 +434,6 @@ export const StudyRoom: React.FC = () => {
             }}
             externalSync={externalSync}
           />
-
-          {/* Background Focus Ambiance Player */}
-          <AmbiancePlayer />
         </div>
 
         {/* Right Column (5 cols): Live Socket Chat */}

@@ -14,17 +14,18 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { user, login } = useAuth();
+  const { user, token, login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    if (user) {
+    const storedToken = localStorage.getItem('studysphere_token');
+    if (user && token && storedToken) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

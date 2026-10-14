@@ -9,6 +9,7 @@ import {
   Settings,
   LifeBuoy,
   BookOpen,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
@@ -19,7 +20,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -51,20 +52,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
         {user ? (
           <NavLink
             to="/profile"
-            className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#F8F9FB] transition-colors"
+            className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#F8F9FB] transition-colors group"
           >
             <Avatar
               src={user.avatar}
               name={user.name}
               size="md"
-              ring="amber"
+              plan={user.plan || 'free'}
+              showPlanBadge={true}
             />
             <div className="overflow-hidden text-left">
-              <h4 className="text-sm font-bold text-[#151C2F] truncate leading-tight">
-                {user.name}
-              </h4>
-              <p className="text-[12px] font-semibold text-[#D97706] truncate">
-                {user.tier || 'Novice Scholar'} • {(user.points ?? 0).toLocaleString()} pts
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-[#151C2F] truncate leading-tight">
+                  {user.name}
+                </h4>
+                {user.plan === 'pro' && (
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-xs">
+                    PRO
+                  </span>
+                )}
+                {user.plan === 'university' && (
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-gradient-to-r from-[#0057BE] to-indigo-600 text-white shadow-xs">
+                    UNI
+                  </span>
+                )}
+              </div>
+              <p
+                className={`text-[12px] font-semibold truncate ${
+                  user.plan === 'pro'
+                    ? 'text-[#D97706]'
+                    : user.plan === 'university'
+                    ? 'text-[#0057BE]'
+                    : 'text-[#667085]'
+                }`}
+              >
+                {user.plan === 'pro'
+                  ? 'Pro Scholar'
+                  : user.plan === 'university'
+                  ? 'University Circle'
+                  : user.tier || 'Novice Scholar'}{' '}
+                • {(user.points ?? 0).toLocaleString()} pts
               </p>
             </div>
           </NavLink>
@@ -123,6 +150,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewSessionClick }) => {
               </NavLink>
             );
           })}
+          {user && (
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-all text-left w-full cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 stroke-[2]" />
+              <span>Sign Out</span>
+            </button>
+          )}
         </nav>
 
         {/* New Study Session CTA */}

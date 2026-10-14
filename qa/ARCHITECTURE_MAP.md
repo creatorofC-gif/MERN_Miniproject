@@ -23,6 +23,7 @@
 | **11. Leaderboard Loading**| `Leaderboard.tsx` | `GET /api/users/leaderboard` | `userController.getLeaderboard` | `User.find().sort({ points: -1 })` | Shimmer skeleton renders during fetch; smoothly transitions to Gold/Silver/Bronze podium & rankings table. |
 | **12. Profile Update** | `Profile.tsx` | `PATCH /api/users/profile` | `userController.updateProfile` | `User.findByIdAndUpdate` | Local update in `AuthContext`; reflects in Sidebar and Topbar; shows `toast.success`. |
 | **13. Room Invite Copy** | `StudyRoom.tsx`, `ParticipantList.tsx` | `navigator.clipboard.writeText` | Client Browser API | None | Copies current URL; displays non-blocking `toast.success('Room invite link copied...')`. |
+| **14. Private Doubt Chat**| `RoomChat.tsx`, `PrivateDoubtChat.tsx` | Socket: `send_private_doubt_message` | `roomSocket.setupRoomSocket` | `StudyRoom.updateOne` ($push solver reply) | Opens floating 1-on-1 private solving convo at bottom right; emits real-time message; registers solver for resolution. |
 
 ---
 
